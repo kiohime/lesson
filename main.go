@@ -7,7 +7,9 @@ import (
 )
 
 func main() {
-	subDirToSkip := "lesson2"
+	inputMode := os.Args[1]
+	rootDir := "c:\\__downloads\\Godot 3 Complete Developer Course - 2D and 3D"
+	subDirToSkip := ".lool"
 
 	walkFunc := func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -18,12 +20,27 @@ func main() {
 			fmt.Printf("skipping a dir without errors: %+v \n", info.Name())
 			return filepath.SkipDir
 		}
-		fmt.Printf("visited file or dir: %q\n", path)
+
+		tolkoFayly := info.Mode().IsRegular()
+		tolkoPuti := info.Mode().IsDir()
+		switch inputMode {
+		case "-tf":
+			if tolkoFayly {
+				fmt.Printf("visited file: %q\n", path)
+			}
+		case "-tp":
+			if tolkoPuti {
+				fmt.Printf("visited dir: %q\n", path)
+			}
+			// default:
+			// 	fmt.Printf("visited file or path: %q\n", path)
+		}
 		return nil
 	}
 	//
-	fmt.Println("On Unix:")
-	err := filepath.Walk(".", walkFunc)
+
+	fmt.Println("###########SEARCHING###########")
+	err := filepath.Walk(rootDir, walkFunc)
 	if err != nil {
 		fmt.Printf("error walking the path %q: %v\n", "test", err)
 		return
