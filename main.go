@@ -81,7 +81,7 @@ func makeFile() error {
 		exportFileName = "filesearch_default.txt"
 	}
 
-	exportFilePath := "c:\\Users\\park-\\go\\src\\github.com\\kiohime\\lesson\\"
+	exportFilePath := ""
 	exportFullPath := exportFilePath + exportFileName
 	file, err := os.OpenFile(exportFullPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
 	for i, data := range pathCache {
