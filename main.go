@@ -62,14 +62,15 @@ func initiate() error {
 
 	// проверка переменной пути на то, является ли та настоящим путем, если нет - остановить программу
 	errRoot := rootCheck(&rootDir)
-	if errRoot != nil {
-		return errRoot
-	}
-	// установка режимов отрисовки, по умолчанию считывает и каталоги, и файлы
+
+	// установка очереди отработки флагов и режимов отрисовки по флагам. по умолчанию считывает и каталоги, и файлы
 	switch {
 	case helpMode:
 		err = flagSet.PrintHelp()
+		keyWait()
 		defer os.Exit(9)
+	case errRoot != nil:
+		return errRoot
 	case searchDir && !searchFile:
 		// -od
 		searchMode = 1
