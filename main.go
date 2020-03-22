@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,13 +10,13 @@ import (
 )
 
 var (
-	rootDirExist bool
-	rootDir      string
-	searchDir    bool
-	searchFile   bool
-	searchMode   int
-	helpMode     bool
-	pathCache    []string
+	rootDir    string
+	searchDir  bool
+	searchFile bool
+	// tcMode     bool
+	searchMode int
+	helpMode   bool
+	pathCache  []string
 )
 
 func mainFunc() error {
@@ -24,37 +25,30 @@ func mainFunc() error {
 }
 
 func initiate() error {
-	// rootDir = "c:\\_working\\_godot_projects\\asd\\"
+
+	rootDir1 := ""
+	rootDir2 := " : totalcommander mode"
+	rootDir = rootDir1 + rootDir2
+
 	flagSet := cli.New("!PROG! сканирует пути и найденное кладет в файл", mainFunc)
 	flagSet.Elements(
 		cli.Flag("-od -dir : показывает только пути", &searchDir),
 		cli.Flag("-of -file : показывает только файлы", &searchFile),
 		cli.Flag("-h -help -? /? : справка", &helpMode),
-
-		// cli.Command("rootDir : команда-указатель пути поиска", func() error { fmt.Println("=== rootDirExist called"); return nil },
-		// 	cli.Flag(" : путь, в котором нужно искать", &rootDir),
-		// ),
-
-		// cli.Flag("-sd -sdir -searchdir : путь, в котором нужно искать", &helpMode),
+		cli.Flag(rootDir1, &rootDir),
 	)
 
-	// err := flagSet.PrintHelp()
-	// if err != nil {
-	// 	fmt.Println("print help error: ", err)
-	// }
 	args := os.Args
 	err := flagSet.Parse(args)
-	// if err != nil {
-	// 	// fmt.Println("parse error: ", err)
-	// 	// fmt.Println("hint: ", flagSet.GetHint())
-	// }
 
-	// fmt.Println(searchDir, searchFile)
 	// SETTING MODES
 	switch {
 	case helpMode:
 		err = flagSet.PrintHelp()
 		defer os.Exit(1)
+	// case tcMode:
+	// 	fmt.Printf("tcMode set, %v\n", tcMode)
+	// 	defer os.Exit(1)
 	case searchDir && !searchFile:
 		// -od
 		searchMode = 1
@@ -77,35 +71,40 @@ func printer() error {
 }
 
 func makeFile() error {
-	fileName := ""
+	exportFileName := ""
 	switch searchMode {
 	case 1:
-		fileName = "filesearch_directory.txt"
+		exportFileName = "filesearch_directory.txt"
 	case 2:
-		fileName = "filesearch_files.txt"
+		exportFileName = "filesearch_files.txt"
 	default:
-		fileName = "filesearch_default.txt"
+		exportFileName = "filesearch_default.txt"
 	}
 
-	file, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
-	// dataWriter := bufio.NewWriter(file)
-	for _, data := range pathCache {
+	exportFilePath := "c:\\Users\\park-\\go\\src\\github.com\\kiohime\\lesson\\"
+	exportFullPath := exportFilePath + exportFileName
+	file, err := os.OpenFile(exportFullPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
+	for i, data := range pathCache {
 		// fmt.Println(data)
-		_, _ = file.WriteString(data + "\n")
+		if i < len(pathCache)-1 {
+			_, _ = file.WriteString(data + "\n")
+		} else {
+			_, _ = file.WriteString(data)
+		}
+
 	}
-	// dataWriter.Flush()
 	file.Close()
 	return err
 }
 
 func startWalk() error {
 	var walkError error
-	rootDir = "c:\\__downloads\\"
+	// rootDir = "c:\\__downloads\\"
 
 	walkFunc := func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			fmt.Printf("prevent panic by handling failure accessing a path %q: %v\n", path, err)
 			walkError = err
+			return walkError
 		}
 
 		isDir := info.Mode().IsDir()
@@ -130,10 +129,12 @@ func startWalk() error {
 	}
 
 	walkError = filepath.Walk(rootDir, walkFunc)
-	if walkError != nil {
-		fmt.Printf("error walking the path : %q\n", walkError)
-	}
 	return walkError
+}
+
+func keyWait() {
+	fmt.Printf("Press 'Enter' to continue...")
+	bufio.NewReader(os.Stdin).ReadBytes('\n')
 }
 
 func main() {
@@ -141,25 +142,25 @@ func main() {
 	err := initiate()
 	if err != nil {
 		fmt.Printf("error in initiation : %q\n", err)
-		os.Exit(1)
+		keyWait()
 	}
 	// start parcing
 	err = startWalk()
 	if err != nil {
 		fmt.Printf("error in walking : %q\n", err)
-		os.Exit(2)
+		keyWait()
 	}
 
 	err = printer()
 	if err != nil {
 		fmt.Printf("error in caching : %q\n", err)
-		os.Exit(3)
+		keyWait()
 	}
 
 	err = makeFile()
 	if err != nil {
 		fmt.Printf("error in making file : %q\n", err)
-		os.Exit(4)
+		keyWait()
 	}
 
 }
