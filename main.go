@@ -8,13 +8,14 @@ import (
 	"github.com/macroblock/imed/pkg/cli"
 )
 
-//flags
 var (
-	searchDir  bool
-	searchFile bool
-	searchMode int
-	helpMode   bool
-	pathCache  []string
+	rootDirExist bool
+	rootDir      string
+	searchDir    bool
+	searchFile   bool
+	searchMode   int
+	helpMode     bool
+	pathCache    []string
 )
 
 func mainFunc() error {
@@ -23,11 +24,18 @@ func mainFunc() error {
 }
 
 func initiate() error {
+	// rootDir = "c:\\_working\\_godot_projects\\asd\\"
 	flagSet := cli.New("!PROG! сканирует пути и найденное кладет в файл", mainFunc)
 	flagSet.Elements(
-		cli.Flag("-od -tp : показывает только пути", &searchDir),
-		cli.Flag("-of -tf : показывает только файлы", &searchFile),
+		cli.Flag("-od -dir : показывает только пути", &searchDir),
+		cli.Flag("-of -file : показывает только файлы", &searchFile),
 		cli.Flag("-h -help -? /? : справка", &helpMode),
+
+		// cli.Command("rootDir : команда-указатель пути поиска", func() error { fmt.Println("=== rootDirExist called"); return nil },
+		// 	cli.Flag(" : путь, в котором нужно искать", &rootDir),
+		// ),
+
+		// cli.Flag("-sd -sdir -searchdir : путь, в котором нужно искать", &helpMode),
 	)
 
 	// err := flagSet.PrintHelp()
@@ -57,7 +65,7 @@ func initiate() error {
 		fmt.Println("searchFile set")
 
 	default:
-		// no args or -od+of
+		// no args
 		fmt.Println("default operators set")
 	}
 	return err
@@ -69,7 +77,17 @@ func printer() error {
 }
 
 func makeFile() error {
-	file, err := os.OpenFile("filesearch.txt", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
+	fileName := ""
+	switch searchMode {
+	case 1:
+		fileName = "filesearch_directory.txt"
+	case 2:
+		fileName = "filesearch_files.txt"
+	default:
+		fileName = "filesearch_default.txt"
+	}
+
+	file, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
 	// dataWriter := bufio.NewWriter(file)
 	for _, data := range pathCache {
 		// fmt.Println(data)
@@ -82,7 +100,7 @@ func makeFile() error {
 
 func startWalk() error {
 	var walkError error
-	rootDir := "c:\\_working\\_godot_projects\\asd\\"
+	rootDir = "c:\\__downloads\\"
 
 	walkFunc := func(path string, info os.FileInfo, err error) error {
 		if err != nil {
