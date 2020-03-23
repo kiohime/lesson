@@ -97,6 +97,7 @@ func startWalk() error {
 			walkError = err
 			return walkError
 		}
+		//
 		// тэги данных "каталог" и "файл"
 		isDir := info.Mode().IsDir()
 		isFile := info.Mode().IsRegular()
