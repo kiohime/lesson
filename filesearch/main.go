@@ -26,8 +26,8 @@ func mainFunc() error {
 }
 
 // Получает переменную пути, проверет - файл или каталог. Если файл, то выдает ошибку
-func rootCheck(r *string) error {
-	file, fileOpenErr := os.Open(*r)
+func rootCheck(r string) error {
+	file, fileOpenErr := os.Open(r)
 	if fileOpenErr != nil {
 		return fileOpenErr
 	}
@@ -45,23 +45,23 @@ func rootCheck(r *string) error {
 // Проверка флагов и устанавливает режим отрисовки скинированного
 func initiate() error {
 	// составная переменная для корневого каталога
-	rootDir1 := ""
-	rootDir2 := " : totalcommander mode"
-	rootDir = rootDir1 + rootDir2
+	// rootDir1 := ""
+	// rootDir2 := " : totalcommander mode"
+	// rootDir = rootDir1 + rootDir2
 	// установка алиасов и значений флагов
 	flagSet := cli.New("!PROG! сканирует пути и найденное кладет в файл", mainFunc)
 	flagSet.Elements(
 		cli.Flag("-od -dir : показывает только пути", &searchDir),
 		cli.Flag("-of -file : показывает только файлы", &searchFile),
 		cli.Flag("-h -help -? /? : справка", &helpMode),
-		cli.Flag(rootDir, &rootDir),
+		cli.Flag(": file pathes", &rootDir),
 	)
 	// парсинг введеных аргументов на предмет флагов
 	args := os.Args
 	err := flagSet.Parse(args)
 
 	// проверка переменной пути на то, является ли та настоящим путем, если нет - остановить программу
-	errRoot := rootCheck(&rootDir)
+	errRoot := rootCheck(rootDir)
 
 	// установка очереди отработки флагов и режимов отрисовки по флагам. по умолчанию считывает и каталоги, и файлы
 	switch {
@@ -93,6 +93,7 @@ func startWalk() error {
 	// настройка сканирования данных
 	walkFunc := func(path string, info os.FileInfo, err error) error {
 		if err != nil {
+			fmt.Printf("walkfunc : %v\n", walkError)
 			walkError = err
 			return walkError
 		}
@@ -124,8 +125,10 @@ func startWalk() error {
 		return walkError
 	}
 	// сканирование данных в переменной пути
+	fmt.Printf("start walking\n")
 	walkError = filepath.Walk(rootDir, walkFunc)
-	return walkError
+	fmt.Println(walkError)
+	return nil
 }
 
 // Создание файлов на экспорт
@@ -147,6 +150,9 @@ func makeFile() error {
 
 	// создание файла по полному пути, вставка значений из кэша отрисовки с обрезкой лишняка
 	file, err := os.OpenFile(exportFullPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
+	if err != nil {
+		return err
+	}
 	for i, data := range pathCache {
 		// fmt.Printf("%q\n", data)
 		if i < len(pathCache)-1 {
@@ -158,7 +164,7 @@ func makeFile() error {
 	// закрытие файла
 	file.Close()
 
-	return err
+	return nil
 }
 
 ////////////////////////////////////////////////
