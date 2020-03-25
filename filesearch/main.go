@@ -11,19 +11,14 @@ import (
 )
 
 var (
-	rootDir    string
-	searchDir  bool
-	searchFile bool
-	searchMode int
-	helpMode   bool
-	pathCache  []string
+	rootDir  string
+	scanDir  bool
+	scanFile bool
+	scanMode int
+	argCache []string
 )
 
 ////////////////////////////////////////////////
-func mainFunc() error {
-	// fmt.Println("=== mainFunc called")
-	return nil
-}
 
 // Получает переменную пути, проверет - файл или каталог. Если файл, то выдает ошибку
 func rootCheck(r string) error {
@@ -42,50 +37,6 @@ func rootCheck(r string) error {
 	return err
 }
 
-// Проверка флагов и устанавливает режим отрисовки скинированного
-func initiate() error {
-	// составная переменная для корневого каталога
-	// rootDir1 := ""
-	// rootDir2 := " : totalcommander mode"
-	// rootDir = rootDir1 + rootDir2
-	// установка алиасов и значений флагов
-	flagSet := cli.New("!PROG! сканирует пути и найденное кладет в файл", mainFunc)
-	flagSet.Elements(
-		cli.Flag("-od -dir : показывает только пути", &searchDir),
-		cli.Flag("-of -file : показывает только файлы", &searchFile),
-		cli.Flag("-h -help -? /? : справка", &helpMode),
-		cli.Flag(": file pathes", &rootDir),
-	)
-	// парсинг введеных аргументов на предмет флагов
-	args := os.Args
-	err := flagSet.Parse(args)
-
-	// проверка переменной пути на то, является ли та настоящим путем, если нет - остановить программу
-	errRoot := rootCheck(rootDir)
-
-	// установка очереди отработки флагов и режимов отрисовки по флагам. по умолчанию считывает и каталоги, и файлы
-	switch {
-	case helpMode:
-		err = flagSet.PrintHelp()
-		keyWait()
-		defer os.Exit(9)
-	case errRoot != nil:
-		return errRoot
-	case searchDir && !searchFile:
-		// -od
-		searchMode = 1
-		fmt.Println("searchDir set")
-	case !searchDir && searchFile:
-		// -of
-		searchMode = 2
-		fmt.Println("searchFile set")
-	default:
-		// no args
-		fmt.Println("default operators set")
-	}
-	return err
-}
-
 // Сканирование данных в пути и добавление их в кэш отрисовки
 func startWalk() error {
 	var walkError error
@@ -97,31 +48,31 @@ func startWalk() error {
 			walkError = err
 			return walkError
 		}
-		//
+
 		// тэги данных "каталог" и "файл"
 		isDir := info.Mode().IsDir()
 		isFile := info.Mode().IsRegular()
 
 		// в зависимости от режима отрисовки, составлять кэш отрисовки
-		switch searchMode {
+		switch scanMode {
 
 		// только каталоги
 		case 1:
-			if searchDir && isDir {
+			if scanDir && isDir {
 				// fmt.Printf("visited : %q\n", path)
-				pathCache = append(pathCache, path)
+				argCache = append(argCache, path)
 			}
 
 		// только файлы
 		case 2:
-			if searchFile && isFile {
+			if scanFile && isFile {
 				// fmt.Printf("visited : %q\n", path)
-				pathCache = append(pathCache, path)
+				argCache = append(argCache, path)
 			}
 		// по дефолту добавляет всё
 		default:
 			// fmt.Printf("visited : %q\n", path)
-			pathCache = append(pathCache, path)
+			argCache = append(argCache, path)
 		}
 		return walkError
 	}
@@ -136,7 +87,7 @@ func startWalk() error {
 func makeFile() error {
 	// установка имени файла зависит от режима отрисовки
 	exportFileName := ""
-	switch searchMode {
+	switch scanMode {
 	case 1:
 		exportFileName = "filesearch_directory.txt"
 	case 2:
@@ -154,23 +105,25 @@ func makeFile() error {
 	if err != nil {
 		return err
 	}
-	for i, data := range pathCache {
+	for i, data := range argCache {
 		// fmt.Printf("%q\n", data)
-		if i < len(pathCache)-1 {
+		if i < len(argCache)-1 {
 			_, _ = file.WriteString(data + "\n")
 		} else {
 			_, _ = file.WriteString(data)
 		}
 	}
 	// закрытие файла
-	file.Close()
-
+	err = file.Close()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 ////////////////////////////////////////////////
 func printer() error {
-	// fmt.Println(pathCache)
+	// fmt.Println(argCache)
 	return nil
 }
 
@@ -181,34 +134,83 @@ func keyWait() {
 }
 
 ////////////////////////////////////////////////
-func main() {
-	// устанавливает режимы
-	err := initiate()
-	if err != nil {
-		fmt.Printf("error in initiation : %q\n", err)
-		keyWait()
-		os.Exit(1)
+func reader() error {
+	if len(argCache) == 0 {
+		err := errors.New("no search arguments was inputed")
+		return err
 	}
+	fmt.Println(argCache)
+	return nil
+}
+
+////////////////////////////////////////////////
+
+// Проверка флагов и устанавливает режим отрисовки скинированного
+func mainFunc() error {
+	// проверка переменной пути на то, является ли та настоящим путем, если нет - остановить программу
+	err := rootCheck(rootDir)
+	// err = errors.New("TEST_ERROR")
+	if err != nil {
+		fmt.Println("root checking error")
+		return err
+	}
+	// установка очереди отработки флагов и режимов отрисовки по флагам. по умолчанию считывает и каталоги, и файлы
+	switch {
+	case scanDir && !scanFile:
+		// -d
+		scanMode = 1
+		fmt.Println("scanDir set")
+	case !scanDir && scanFile:
+		// -f
+		scanMode = 2
+		fmt.Println("scanFile set")
+	default:
+		// no args
+		fmt.Println("default operators set")
+	}
+
 	// парсит
 	err = startWalk()
 	if err != nil {
 		fmt.Printf("error in walking : %q\n", err)
-		keyWait()
-		os.Exit(1)
+		return err
 	}
 	// ничего не делает
 	err = printer()
 	if err != nil {
 		fmt.Printf("error in caching : %q\n", err)
-		keyWait()
-		os.Exit(1)
+		return err
 	}
 	// создает файл
 	err = makeFile()
 	if err != nil {
 		fmt.Printf("error in making file : %q\n", err)
+		return err
+	}
+	return nil
+}
+
+////////////////////////////////////////////////
+func main() {
+	// установка алиасов и значений флагов
+	flagSet := cli.New("!PROG! сканирует пути и найденное кладет в файл", mainFunc)
+	flagSet.Elements(
+		cli.Flag("-d -dir : показывает только пути", &scanDir),
+		cli.Flag("-f -file : показывает только файлы", &scanFile),
+		cli.Flag("-h -help -? /? : справка", flagSet.PrintHelp).Terminator(),
+		cli.Flag(": file pathes", &rootDir),
+		cli.Command("sd search : режим поиска по имеющейся базе", reader,
+			cli.Flag(": search arguments", &argCache)),
+	)
+
+	// парсинг введеных аргументов на предмет флагов
+	args := os.Args
+	err := flagSet.Parse(args)
+	// err = errors.New("TEST_ERROR")
+	if err != nil {
+		fmt.Printf("error in parsing arguments : %q\n", err)
 		keyWait()
 		os.Exit(1)
 	}
-
+	keyWait()
 }

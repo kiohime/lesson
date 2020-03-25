@@ -1,35 +1,33 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"strings"
 )
 
 func main() {
+	f, err := os.Open("c:\\_working\\filesearch_files.txt")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	defer f.Close()
+	// Splits on newlines by default.
+	scanner := bufio.NewScanner(f)
 
-	// To set a key/value pair, use `os.Setenv`. To get a
-	// value for a key, use `os.Getenv`. This will return
-	// an empty string if the key isn't present in the
-	// environment.
-	os.Setenv("FOO", "1")
-	fmt.Println("FOO:", os.Getenv("FOO"))
-	fmt.Println("BAR:", os.Getenv("BAR"))
+	// https://golang.org/pkg/bufio/#Scanner.Scan
+	for scanner.Scan() {
+		if strings.Contains(scanner.Text(), "menu") {
+			fmt.Println(scanner.Text())
+			// os.Exit(1)
+		}
 
-	// Use `os.Environ` to list all key/value pairs in the
-	// environment. This returns a slice of strings in the
-	// form `KEY=value`. You can `strings.SplitN` them to
-	// get the key and value. Here we print all the keys.
-	fmt.Println()
-	// for _, e := range os.Environ() {
-	// 	pair := strings.SplitN(e, "=", 2)
-	// 	fmt.Println(pair[0])
-	// }
+	}
 
-	// user, err := user.Current()
-	// if err != nil {
-	// 	fmt.Printf("====== %v\n", err)
-	// 	os.Exit(1)
-	// }
-	p, _ := os.LookupEnv("temp")
-	fmt.Println("=== ", p)
+	if err := scanner.Err(); err != nil {
+		// Handle the error
+	}
+
 }
