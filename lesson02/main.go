@@ -19,8 +19,10 @@ func main() {
 
 	// https://golang.org/pkg/bufio/#Scanner.Scan
 	for scanner.Scan() {
-		if strings.Contains(scanner.Text(), "menu") {
-			fmt.Println(scanner.Text())
+		line := scanner.Text()
+		line = strings.TrimSpace(line)
+		if strings.Contains(line, "menu") {
+			fmt.Println(line)
 			// os.Exit(1)
 		}
 
