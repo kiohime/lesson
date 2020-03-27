@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/macroblock/imed/pkg/cli"
 )
@@ -105,14 +106,9 @@ func makeFile() error {
 	if err != nil {
 		return err
 	}
-	for i, data := range argCache {
-		// fmt.Printf("%q\n", data)
-		if i < len(argCache)-1 {
-			_, _ = file.WriteString(data + "\n")
-		} else {
-			_, _ = file.WriteString(data)
-		}
-	}
+	s := strings.Join(argCache, "\n")
+	file.WriteString(s)
+
 	// закрытие файла
 	err = file.Close()
 	if err != nil {
@@ -139,7 +135,31 @@ func reader() error {
 		err := errors.New("no search arguments was inputed")
 		return err
 	}
-	fmt.Println(argCache)
+	// fmt.Println(argCache)
+
+	f, err := os.Open("e:\\filesearch_files.txt")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	defer f.Close()
+	// Splits on newlines by default.
+	scanner := bufio.NewScanner(f)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		line = strings.TrimSpace(line)
+		lineFile := filepath.Base(line)
+		if strings.Contains(lineFile, "mama") {
+			fmt.Println(line)
+			// os.Exit(1)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		// Handle the error
+	}
+
 	return nil
 }
 
