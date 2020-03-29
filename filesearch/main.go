@@ -12,11 +12,18 @@ import (
 )
 
 var (
-	rootDir  string
-	scanDir  bool
-	scanFile bool
-	scanMode int
-	argCache []string
+	rootDir        string
+	scanDir        bool
+	scanFile       bool
+	scanMode       int
+	argCache       []string
+	dataForPrinter []string
+
+	workDir         = os.Getenv("FILESEARCH_PATH")
+	baseNameDefault = "filesearch_default.txt"
+	baseNameFiles   = "filesearch_files.txt"
+	baseNameDirs    = "filesearch_directory.txt"
+	resultFileName  = "result.txt"
 )
 
 ////////////////////////////////////////////////
@@ -84,30 +91,19 @@ func startWalk() error {
 	return nil
 }
 
-// Создание файлов на экспорт
-func makeFile() error {
-	// установка имени файла зависит от режима отрисовки
-	exportFileName := ""
-	switch scanMode {
-	case 1:
-		exportFileName = "filesearch_directory.txt"
-	case 2:
-		exportFileName = "filesearch_files.txt"
-	default:
-		exportFileName = "filesearch_default.txt"
-	}
-
-	// установка пути файла, можно забить хардкодом для конкретного места
-	exportFilePath := ""
-	exportFullPath := exportFilePath + exportFileName
-
+func bahniFile(inputName string, inputData *[]string) error {
 	// создание файла по полному пути, вставка значений из кэша отрисовки с обрезкой лишняка
-	file, err := os.OpenFile(exportFullPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
+
+	file, err := os.OpenFile(inputName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
 	if err != nil {
 		return err
 	}
-	s := strings.Join(argCache, "\n")
-	file.WriteString(s)
+	s := strings.Join(*inputData, "\n")
+	_, e := file.WriteString(s)
+	if e != nil {
+		err = e
+		return err
+	}
 
 	// закрытие файла
 	err = file.Close()
@@ -118,7 +114,20 @@ func makeFile() error {
 }
 
 ////////////////////////////////////////////////
-func printer() error {
+func printer(result ...string) error {
+
+	if len(result) == 0 {
+		fmt.Println("no results were found")
+		return nil
+	}
+
+	for _, r := range result {
+		i, e := fmt.Println(r)
+		if e != nil {
+			fmt.Println(i)
+			return e
+		}
+	}
 	// fmt.Println(argCache)
 	return nil
 }
@@ -130,34 +139,57 @@ func keyWait() {
 }
 
 ////////////////////////////////////////////////
-func reader() error {
-	if len(argCache) == 0 {
+func readBaser() error {
+	argLen := len(argCache)
+	if argLen == 0 {
 		err := errors.New("no search arguments was inputed")
 		return err
 	}
 	// fmt.Println(argCache)
+	// readBaseName := basePath +
 
-	f, err := os.Open("e:\\filesearch_files.txt")
+	base := workDir + "filesearch_files.txt"
+	f, err := os.Open(base)
 	if err != nil {
 		fmt.Println(err)
+		keyWait()
 		os.Exit(1)
 	}
 	defer f.Close()
 	// Splits on newlines by default.
 	scanner := bufio.NewScanner(f)
 
+	// countScan := 0
 	for scanner.Scan() {
+		// fmt.Println("######################################")
+		// fmt.Println("counter is ", countScan)
 		line := scanner.Text()
 		line = strings.TrimSpace(line)
 		lineFile := filepath.Base(line)
-		if strings.Contains(lineFile, "mama") {
-			fmt.Println(line)
-			// os.Exit(1)
+
+		for _, a := range argCache {
+			// fmt.Println("argument is ", a)
+			if strings.Contains(lineFile, a) {
+				dataForPrinter = append(dataForPrinter, line)
+				// fmt.Println(line)
+				// os.Exit(1)
+			}
 		}
+		// countScan++
 	}
 
-	if err := scanner.Err(); err != nil {
-		// Handle the error
+	read := workDir + resultFileName
+	err = bahniFile(read, &dataForPrinter)
+
+	if err != nil {
+		fmt.Printf("error in making file : %q\n", err)
+		return err
+	}
+
+	err = printer(dataForPrinter...)
+	if err != nil {
+		fmt.Printf("error in printing : %q\n", err)
+		return err
 	}
 
 	return nil
@@ -165,8 +197,8 @@ func reader() error {
 
 ////////////////////////////////////////////////
 
-// Проверка флагов и устанавливает режим отрисовки скинированного
-func mainFunc() error {
+//устанавливает режим отрисовки скинированного
+func writeBaser() error {
 	// проверка переменной пути на то, является ли та настоящим путем, если нет - остановить программу
 	err := rootCheck(rootDir)
 	// err = errors.New("TEST_ERROR")
@@ -189,6 +221,18 @@ func mainFunc() error {
 		fmt.Println("default operators set")
 	}
 
+	exportFileName := ""
+	switch scanMode {
+	case 1:
+		exportFileName = baseNameDirs
+	case 2:
+		exportFileName = baseNameFiles
+	default:
+		exportFileName = baseNameDefault
+	}
+
+	exportFullPath := workDir + exportFileName
+
 	// парсит
 	err = startWalk()
 	if err != nil {
@@ -196,13 +240,13 @@ func mainFunc() error {
 		return err
 	}
 	// ничего не делает
-	err = printer()
-	if err != nil {
-		fmt.Printf("error in caching : %q\n", err)
-		return err
-	}
+	// err = printer(dataForPrinter...)
+	// if err != nil {
+	// 	fmt.Printf("error in caching : %q\n", err)
+	// 	return err
+	// }
 	// создает файл
-	err = makeFile()
+	err = bahniFile(exportFullPath, &argCache)
 	if err != nil {
 		fmt.Printf("error in making file : %q\n", err)
 		return err
@@ -213,14 +257,15 @@ func mainFunc() error {
 ////////////////////////////////////////////////
 func main() {
 	// установка алиасов и значений флагов
-	flagSet := cli.New("!PROG! сканирует пути и найденное кладет в файл", mainFunc)
+	flagSet := cli.New("!PROG! сканирует пути и найденное кладет в файл", writeBaser)
 	flagSet.Elements(
+		// cli.Flag("--path : показывает только пути", &path),
 		cli.Flag("-d -dir : показывает только пути", &scanDir),
 		cli.Flag("-f -file : показывает только файлы", &scanFile),
-		cli.Flag("-h -help -? /? : справка", flagSet.PrintHelp).Terminator(),
 		cli.Flag(": file pathes", &rootDir),
-		cli.Command("sd search : режим поиска по имеющейся базе", reader,
+		cli.Command("sd search : режим поиска по имеющейся базе", readBaser,
 			cli.Flag(": search arguments", &argCache)),
+		cli.Flag("-h -help -? /? : справка", flagSet.PrintHelp).Terminator(),
 	)
 
 	// парсинг введеных аргументов на предмет флагов
