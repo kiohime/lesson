@@ -148,6 +148,18 @@ func readBaser() error {
 	// fmt.Println(argCache)
 	// readBaseName := basePath +
 
+	// exportFileName := ""
+	// switch scanMode {
+	// case 1:
+	// 	exportFileName = baseNameDirs
+	// case 2:
+	// 	exportFileName = baseNameFiles
+	// default:
+	// 	exportFileName = baseNameDefault
+	// }
+
+	// exportFullPath := workDir + exportFileName
+
 	base := workDir + "filesearch_files.txt"
 	f, err := os.Open(base)
 	if err != nil {
@@ -260,11 +272,13 @@ func main() {
 	flagSet := cli.New("!PROG! сканирует пути и найденное кладет в файл", writeBaser)
 	flagSet.Elements(
 		// cli.Flag("--path : показывает только пути", &path),
-		cli.Flag("-d -dir : показывает только пути", &scanDir),
-		cli.Flag("-f -file : показывает только файлы", &scanFile),
+		cli.Flag("-d -dir : сканирует только пути", &scanDir),
+		cli.Flag("-f -file : сканирует только файлы", &scanFile),
 		cli.Flag(": file pathes", &rootDir),
 		cli.Command("sd search : режим поиска по имеющейся базе", readBaser,
-			cli.Flag(": search arguments", &argCache)),
+			cli.Flag(": search arguments", &argCache),
+			cli.Flag("-d -dir : ищет в базе только пути", &scanDir),
+			cli.Flag("-f -file : ищет в базе только файлы", &scanFile)),
 		cli.Flag("-h -help -? /? : справка", flagSet.PrintHelp).Terminator(),
 	)
 

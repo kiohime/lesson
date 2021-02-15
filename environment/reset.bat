@@ -1,0 +1,2 @@
+setx path "C:\Program Files (x86)\Common Files\Intel\Shared Libraries\redist\intel64\compiler;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\ProgramData\chocolatey\bin;C:\tools\go\bin;c:\Program Files\MKVToolNix\;C:\Program Files\nodejs\;c:\tools\msys64\mingw64\bin\;C:\Program Files\Git\cmd;C:\Go\bin;C:\Users\a.pak\AppData\Local\Microsoft\WindowsApps;d:\tools\ffmpeg\bin;d:\tools;C:\Users\a.pak\AppData\Local\Programs\Microsoft VS Code\bin;c:\Go\bin\;c:\Users\a.pak\go\bin\;d:\tools\AHK\"
+pause
