@@ -19,7 +19,7 @@ var (
 	argCache       []string
 	dataForPrinter []string
 
-	workDir         = os.Getenv("FILESEARCH_PATH")
+	workDir         = ""
 	baseNameDefault = "filesearch_default.txt"
 	baseNameFiles   = "filesearch_files.txt"
 	baseNameDirs    = "filesearch_directory.txt"
@@ -160,7 +160,8 @@ func readBaser() error {
 
 	// exportFullPath := workDir + exportFileName
 
-	base := workDir + "filesearch_files.txt"
+	base := workDir + "filelist_folders_upload.txt"
+	fmt.Println(base)
 	f, err := os.Open(base)
 	if err != nil {
 		fmt.Println(err)
@@ -266,8 +267,33 @@ func writeBaser() error {
 	return nil
 }
 
+///////////////////////////////////////////////
+
+func initialize() error {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("UserHomeDir error: %v", err)
+	}
+	filePath := filepath.Join(homeDir, ".config", "kiohime")
+	workDir = filePath + "\\"
+	err = os.MkdirAll(filepath.Dir(filePath), 0777)
+	// 0666 for files
+	if err != nil {
+		return fmt.Errorf("Database error: %v", err)
+	}
+	return nil
+}
+
 ////////////////////////////////////////////////
 func main() {
+	// checking database folders
+	err := initialize()
+	if err != nil {
+		fmt.Printf("Error in initialisation : %q\n", err)
+		keyWait()
+		os.Exit(1)
+	}
+
 	// установка алиасов и значений флагов
 	flagSet := cli.New("!PROG! сканирует пути и найденное кладет в файл", writeBaser)
 	flagSet.Elements(
@@ -284,8 +310,11 @@ func main() {
 
 	// парсинг введеных аргументов на предмет флагов
 	args := os.Args
-	err := flagSet.Parse(args)
+	err = flagSet.Parse(args)
 	// err = errors.New("TEST_ERROR")
+
+	// fmt.Println("#########" + workDir)
+
 	if err != nil {
 		fmt.Printf("error in parsing arguments : %q\n", err)
 		keyWait()
