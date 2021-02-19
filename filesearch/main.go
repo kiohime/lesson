@@ -30,6 +30,7 @@ var (
 
 // Получает переменную пути, проверет - файл или каталог. Если файл, то выдает ошибку
 func rootCheck(r string) error {
+	fmt.Println("### rootcheck")
 	file, fileOpenErr := os.Open(r)
 	if fileOpenErr != nil {
 		return fileOpenErr
@@ -47,6 +48,8 @@ func rootCheck(r string) error {
 
 // Сканирование данных в пути и добавление их в кэш отрисовки
 func startWalk() error {
+	fmt.Println("### startWalk")
+
 	var walkError error
 
 	// настройка сканирования данных
@@ -92,6 +95,8 @@ func startWalk() error {
 }
 
 func bahniFile(inputName string, inputData *[]string) error {
+	fmt.Println("### bahnifile")
+
 	// создание файла по полному пути, вставка значений из кэша отрисовки с обрезкой лишняка
 
 	file, err := os.OpenFile(inputName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
@@ -115,6 +120,7 @@ func bahniFile(inputName string, inputData *[]string) error {
 
 ////////////////////////////////////////////////
 func printer(result ...string) error {
+	fmt.Println("### printer")
 
 	if len(result) == 0 {
 		fmt.Println("no results were found")
@@ -140,6 +146,8 @@ func keyWait() {
 
 ////////////////////////////////////////////////
 func readBaser() error {
+	fmt.Println("### readbaser")
+
 	argLen := len(argCache)
 	if argLen == 0 {
 		err := errors.New("no search arguments was inputed")
@@ -212,6 +220,8 @@ func readBaser() error {
 
 //устанавливает режим отрисовки скинированного
 func writeBaser() error {
+	fmt.Println("### writebaser")
+
 	// проверка переменной пути на то, является ли та настоящим путем, если нет - остановить программу
 	err := rootCheck(rootDir)
 	// err = errors.New("TEST_ERROR")
@@ -270,6 +280,7 @@ func writeBaser() error {
 ///////////////////////////////////////////////
 
 func initialize() error {
+	fmt.Println("### initialize")
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return fmt.Errorf("UserHomeDir error: %v", err)
