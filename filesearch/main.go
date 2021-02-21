@@ -98,22 +98,21 @@ func bahniFile(inputName string, inputData *[]string) error {
 	fmt.Println("### bahnifile")
 
 	// создание файла по полному пути, вставка значений из кэша отрисовки с обрезкой лишняка
-
 	file, err := os.OpenFile(inputName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
 	if err != nil {
-		return err
+		return fmt.Errorf("bahni file 1 : %v", err)
 	}
 	s := strings.Join(*inputData, "\n")
 	_, e := file.WriteString(s)
 	if e != nil {
 		err = e
-		return err
+		return fmt.Errorf("bahni file 2 : %v", err)
 	}
 
 	// закрытие файла
 	err = file.Close()
 	if err != nil {
-		return err
+		return fmt.Errorf("bahni file 3 : %v", err)
 	}
 	return nil
 }
@@ -271,8 +270,7 @@ func writeBaser() error {
 	// создает файл
 	err = bahniFile(exportFullPath, &argCache)
 	if err != nil {
-		fmt.Printf("error in making file : %q\n", err)
-		return err
+		return fmt.Errorf("error in making file : %v", err)
 	}
 	return nil
 }
@@ -285,9 +283,10 @@ func initialize() error {
 	if err != nil {
 		return fmt.Errorf("UserHomeDir error: %v", err)
 	}
-	filePath := filepath.Join(homeDir, ".config", "kiohime")
-	workDir = filePath + "\\"
-	err = os.MkdirAll(filepath.Dir(filePath), 0777)
+	filePath := filepath.Join(homeDir, ".config", "kiohime", "file.txt")
+	filePathDir := filepath.Dir(filePath)
+	workDir = filePathDir + "\\"
+	err = os.MkdirAll(filePathDir, 0777)
 	// 0666 for files
 	if err != nil {
 		return fmt.Errorf("Database error: %v", err)
