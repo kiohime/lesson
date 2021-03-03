@@ -11,6 +11,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/data/validation"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -360,6 +361,18 @@ func executer() string {
 
 }
 
+func findBtn(input *widget.Entry, scr *widget.Label) func() {
+	return func() {
+		argCache = nil
+		argCache = append(argCache, input.Text)
+		result := executer()
+		// dataBox.Add(widget.NewLabel(result))
+		scr.Text = result
+		// input.Text = ""
+		input.Refresh()
+	}
+}
+
 func main() {
 
 	err := initialize()
@@ -392,30 +405,24 @@ func main() {
 	// dataBoxScroll.Resize(fyne.NewSize(400, 400))
 
 	input := widget.NewEntry()
-	inputButton := widget.NewButton("Find", func() {
-		argCache = nil
-		argCache = append(argCache, input.Text)
-		result := executer()
-		// dataBox.Add(widget.NewLabel(result))
-		screen.Text = result
-		input.Text = ""
-	})
-
-	input.SetPlaceHolder("Enter search text...")
-	searchTab := container.NewBorder(
-		nil,
-		nil,
-		nil,
-		inputButton,
-		//other
-		input,
-	)
+	form := &widget.Form{
+		Items: []*widget.FormItem{
+			{Text: "Data", Widget: input, HintText: "input data"},
+		},
+		OnCancel: nil,
+		OnSubmit: findBtn(input, screen),
+	}
+	input.Validator = validation.NewRegexp(`.+`, "input smthing")
 
 	allContainers := container.NewBorder(
 		// top
 		container.NewVBox(
-			setter,
-			searchTab,
+			container.NewBorder(
+				nil, nil, setter, nil, container.NewBorder(
+					nil, nil, widget.NewSeparator(), nil, form,
+				),
+			),
+			widget.NewSeparator(),
 		),
 		nil,
 		nil,
