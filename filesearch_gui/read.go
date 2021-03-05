@@ -34,7 +34,7 @@ func readBaser() ([]string, error) {
 
 	// exportFullPath := workDir + exportFileName
 
-	base := workDir + "filelist_folders_upload.txt"
+	base := workDir + baseNameDirs
 	fmt.Println(base)
 	f, err := os.Open(base)
 	if err != nil {
