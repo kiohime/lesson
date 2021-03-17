@@ -14,6 +14,7 @@ type Options struct {
 
 // StartWalk - Сканирование данных в пути и добавление их в кэш отрисовки
 func StartWalk(paths []string, options Options) ([]string, []error) {
+	fmt.Println("## StartWalk")
 	var ret []string
 	var errors []error
 	for _, p := range paths {
@@ -21,12 +22,12 @@ func StartWalk(paths []string, options Options) ([]string, []error) {
 		ret = append(ret, result...)
 		errors = append(errors, errs...)
 	}
+	fmt.Println("## END StartWalk")
 	return ret, errors
 }
 
 func startWalk(rootDir string, options Options) ([]string, []error) {
-	fmt.Println("### startWalk")
-
+	fmt.Printf("### start walking\n")
 	var ret []string
 	var errors []error
 
@@ -72,11 +73,12 @@ func startWalk(rootDir string, options Options) ([]string, []error) {
 		return nil
 	}
 	// сканирование данных в переменной пути
-	fmt.Printf("start walking\n")
+
 	err := filepath.Walk(rootDir, walkFunc)
 	if err != nil {
 		errors = append(errors, err)
 	}
+	fmt.Printf("### END walking\n")
 	// fmt.Println(walkError)
 	return ret, errors
 }

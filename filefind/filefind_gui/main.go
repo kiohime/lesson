@@ -22,36 +22,39 @@ var (
 	argCache       []string
 	dataForPrinter []string
 
-	appMode         int
-	workDir         = ""
-	baseNameDefault = "filesearch_default.txt"
-	baseNameFiles   = "filesearch_files.txt"
-	baseNameDirs    = "filesearch_directory.txt"
-	resultFileName  = "result.txt"
+	appMode        int
+	workDir        = ""
+	baseNameFiles  = "filesearch_files.txt"
+	baseNameDirs   = "filesearch_directory.txt"
+	resultFileName = "result.txt"
 )
 
-// создает файл с именем inputName из массива данных inputData, данные добавляются через ньюлайн
+//bahniFile - создает файл с именем inputName из массива данных inputData, данные добавляются через ньюлайн
 func bahniFile(inputName string, inputData *[]string) error {
-	fmt.Println("### bahnifile")
+	fmt.Println("#### bahnifile")
 	// fmt.Println(inputName)
 	// fmt.Println(inputData)
 
-	err := os.Remove(inputName)
+	// err := os.Remove(inputName)
 	// создание файла по полному пути, вставка значений из кэша отрисовки с обрезкой лишняка
 	file, err := os.OpenFile(inputName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
 	if err != nil {
+		fmt.Println("#### END bahnifile")
 		return fmt.Errorf("bahni file 1 : %v", err)
 	}
 	s := strings.Join(*inputData, "\n")
 	_, e := file.WriteString(s)
+
 	if e != nil {
 		err = e
+		fmt.Println("#### END bahnifile")
 		return fmt.Errorf("bahni file 2 : %v", err)
 	}
 
 	// закрытие файла
 	err = file.Close()
 	if err != nil {
+		fmt.Println("#### END bahnifile")
 		return fmt.Errorf("bahni file 3 : %v", err)
 	}
 	return nil
@@ -141,7 +144,7 @@ func initialize() error {
 // 	keyWait()
 // }
 
-// запускает программу в устновленном режиме
+//executer - запускает программу в устновленном режиме
 func executer() string {
 	result := ""
 	switch appMode {
@@ -150,7 +153,7 @@ func executer() string {
 		if e != nil {
 			a := fmt.Errorf("error in reading base : %v", e)
 			fmt.Println(a)
-			os.Exit(1)
+			// os.Exit(1)
 		}
 		result = strings.Join(base, "\n")
 	case 1:
@@ -162,9 +165,10 @@ func executer() string {
 		if e != nil {
 			a := fmt.Errorf("error in writing base : %v", e)
 			fmt.Println(a)
-			os.Exit(1)
+			// os.Exit(1)
 		}
 		// result = "000000000000000000000000000000"
+		fmt.Println("THE END")
 	}
 	return result
 

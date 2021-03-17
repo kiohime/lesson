@@ -10,9 +10,9 @@ import (
 
 // ////////////////////////////////////////////////
 
-// Получает переменную пути, проверет - файл или каталог. Если файл, то выдает ошибку
+//rootCheck - Получает переменную пути, проверет - файл или каталог. Если файл, то выдает ошибку
 func rootCheck(r string) error {
-	fmt.Println("### rootcheck")
+	fmt.Println("## rootcheck")
 	file, fileOpenErr := os.Open(r)
 	if fileOpenErr != nil {
 		return fileOpenErr
@@ -82,9 +82,9 @@ func rootCheck(r string) error {
 
 ////////////////////////////////////////////////
 
-//устанавливает режим отрисовки скинированного
+//writeBaser - устанавливает режим отрисовки скинированного
 func writeBaser() error {
-	fmt.Println("### writebaser")
+	fmt.Println("# writebaser")
 
 	// проверка переменной пути на то, является ли та настоящим путем, если нет - остановить программу
 	err := rootCheck(rootDir)
@@ -103,10 +103,6 @@ func writeBaser() error {
 		// -f
 		scanMode = 2
 		fmt.Println("scanFile set")
-	default:
-		// no args
-		fmt.Println("default operators set")
-		scanMode = 1
 	}
 
 	exportFileName := ""
@@ -115,8 +111,6 @@ func writeBaser() error {
 		exportFileName = baseNameDirs
 	case 2:
 		exportFileName = baseNameFiles
-	default:
-		exportFileName = baseNameDefault
 	}
 
 	exportFullPath := workDir + exportFileName
@@ -130,7 +124,6 @@ func writeBaser() error {
 			SkipFile: !scanFile,
 		},
 	)
-
 	argCache = res
 	// ничего не делает
 	// err = printer(dataForPrinter...)
@@ -151,6 +144,7 @@ func writeBaser() error {
 		}
 		return fmt.Errorf("%v", err)
 	}
+	fmt.Println("# END writebaser")
 	return nil
 }
 

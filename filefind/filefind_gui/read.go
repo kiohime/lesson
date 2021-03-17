@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-// reading mode : сканирует существующую базу
+//readBaser - reading mode : сканирует существующую базу
 func readBaser() ([]string, error) {
 	dataForPrinter = nil
 	fmt.Println("### readbaser")
