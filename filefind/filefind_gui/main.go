@@ -28,6 +28,10 @@ var (
 	baseNameDirs   = "filesearch_directory.txt"
 	resultFileName = "result.txt"
 )
+var (
+	input     *modifiedEntry
+	curScreen *widget.Label
+)
 
 //bahniFile - создает файл с именем inputName из массива данных inputData, данные добавляются через ньюлайн
 func bahniFile(inputName string, inputData *[]string) error {
@@ -59,27 +63,6 @@ func bahniFile(inputName string, inputData *[]string) error {
 	}
 	return nil
 }
-
-// ////////////////////////////////////////////////
-// func printer(result ...string) error {
-// 	fmt.Println("### printer")
-
-// 	if len(result) == 0 {
-// 		fmt.Println("no results were found")
-// 		return nil
-// 	}
-
-// 	for _, r := range result {
-// 		dataBox.Add(widget.NewLabel(r))
-// 		// i, e := fmt.Println(r)
-// 		// if e != nil {
-// 		// 	fmt.Println(i)
-// 		// 	return e
-// 		// }
-// 	}
-// 	// fmt.Println(argCache)
-// 	return nil
-// }
 
 // пауза
 func keyWait() {
@@ -176,6 +159,7 @@ func executer() string {
 
 // findBtn - executes searching mode, depending on switch
 func findBtn(input *modifiedEntry, scr *widget.Label) func() {
+
 	return func() {
 		argCache = nil
 		rootDir = ""
@@ -204,7 +188,8 @@ func (e *modifiedEntry) onEsc() {
 }
 
 func (e *modifiedEntry) onEnter() {
-	fmt.Printf("$#!@\ninput: \"%v\"", e.Entry.Text)
+	fn := findBtn(input, curScreen)
+	fn()
 }
 
 // newEscapeEntry - rewriting basic entry widget
@@ -220,11 +205,25 @@ func (e *modifiedEntry) TypedKey(key *fyne.KeyEvent) {
 	switch key.Name {
 	case fyne.KeyEscape:
 		e.onEsc()
-	case fyne.KeyEnter:
+	case fyne.KeyEnter, fyne.KeyReturn:
 		e.onEnter()
 	default:
 		e.Entry.TypedKey(key)
 	}
+}
+
+func setFindMode() *widget.RadioGroup {
+	s := widget.NewRadioGroup([]string{"Поиск", "Сканирование"}, func(s string) {
+		switch s {
+		case "Поиск":
+			appMode = 0
+		case "Сканирование":
+			appMode = 1
+		}
+	})
+	s.SetSelected("Поиск")
+	s.Refresh()
+	return s
 }
 
 // gui - draws start gui
@@ -233,18 +232,9 @@ func gui() {
 	myWindow := myApp.NewWindow("Notepad")
 	myWindow.Resize(fyne.NewSize(1000, 500))
 
-	setter := widget.NewRadioGroup([]string{"Поиск", "Сканирование"}, func(s string) {
-		switch s {
-		case "Поиск":
-			appMode = 0
-		case "Сканирование":
-			appMode = 1
-		}
-	})
-	setter.SetSelected("Поиск")
-	setter.Refresh()
+	setter := setFindMode()
 
-	curScreen := widget.NewLabel("")
+	curScreen = widget.NewLabel("")
 
 	// screen.Text = "mama"
 	dataBox := container.NewWithoutLayout(curScreen)
@@ -252,7 +242,7 @@ func gui() {
 	// dataBoxScroll.Move()
 	// dataBoxScroll.Resize(fyne.NewSize(400, 400))
 
-	input := newModifiedEntry()
+	input = newModifiedEntry()
 	form := &widget.Form{
 		Items: []*widget.FormItem{
 			{Text: "Data", Widget: input, HintText: "input data"},
