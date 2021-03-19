@@ -174,7 +174,8 @@ func executer() string {
 
 }
 
-func findBtn(input *widget.Entry, scr *widget.Label) func() {
+// findBtn - executes searching mode, depending on switch
+func findBtn(input *modifiedEntry, scr *widget.Label) func() {
 	return func() {
 		argCache = nil
 		rootDir = ""
@@ -192,6 +193,41 @@ func findBtn(input *widget.Entry, scr *widget.Label) func() {
 	}
 }
 
+type modifiedEntry struct {
+	widget.Entry
+}
+
+// onEsc - clears entry
+func (e *modifiedEntry) onEsc() {
+	fmt.Println(e.Entry.Text)
+	e.Entry.SetText("")
+}
+
+func (e *modifiedEntry) onEnter() {
+	fmt.Printf("$#!@\ninput: \"%v\"", e.Entry.Text)
+}
+
+// newEscapeEntry - rewriting basic entry widget
+func newModifiedEntry() *modifiedEntry {
+	entry := &modifiedEntry{}
+	entry.ExtendBaseWidget(entry)
+	return entry
+}
+
+// TypedKey - overriding default TypedKey method in fyne.Focusable, adding switch
+// ТУТ ПРЕСЕТЫ ДЛЯ КЛАВИАТУРЫ
+func (e *modifiedEntry) TypedKey(key *fyne.KeyEvent) {
+	switch key.Name {
+	case fyne.KeyEscape:
+		e.onEsc()
+	case fyne.KeyEnter:
+		e.onEnter()
+	default:
+		e.Entry.TypedKey(key)
+	}
+}
+
+// gui - draws start gui
 func gui() {
 	myApp := app.New()
 	myWindow := myApp.NewWindow("Notepad")
@@ -209,13 +245,14 @@ func gui() {
 	setter.Refresh()
 
 	curScreen := widget.NewLabel("")
+
 	// screen.Text = "mama"
 	dataBox := container.NewWithoutLayout(curScreen)
 	dataBoxScroll := container.NewScroll(dataBox)
 	// dataBoxScroll.Move()
 	// dataBoxScroll.Resize(fyne.NewSize(400, 400))
 
-	input := widget.NewEntry()
+	input := newModifiedEntry()
 	form := &widget.Form{
 		Items: []*widget.FormItem{
 			{Text: "Data", Widget: input, HintText: "input data"},
