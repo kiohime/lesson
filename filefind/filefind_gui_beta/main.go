@@ -29,9 +29,20 @@ var (
 	resultFileName = "result.txt"
 )
 var (
+	progressBar   *widget.ProgressBarInfinite
+	inputTab      Input_widget
 	input_widget  *modifiedEntry
 	screen_widget *widget.Label
 )
+
+type modifiedEntry struct {
+	widget.Entry
+}
+
+type Input_widget struct {
+	Mode  *widget.RadioGroup
+	Entry *modifiedEntry
+}
 
 //bahniFile - создает файл с именем inputName из массива данных inputData, данные добавляются через ньюлайн
 func bahniFile(inputName string, inputData *[]string) error {
@@ -154,42 +165,6 @@ func executer() string {
 		fmt.Println("THE END")
 	}
 	return result
-
-}
-
-// findBtn - executes searching mode, depending on switch
-func findBtn(input *modifiedEntry, scr *widget.Label) func() {
-
-	return func() {
-		argCache = nil
-		rootDir = ""
-		switch appMode {
-		case 0:
-			argCache = append(argCache, input.Text)
-		case 1:
-			rootDir = input.Text
-		}
-		result := executer()
-		// dataBox.Add(widget.NewLabel(result))
-		scr.Text = result
-		input.Text = ""
-		input.Refresh()
-	}
-}
-
-type modifiedEntry struct {
-	widget.Entry
-}
-
-// onEsc - clears entry
-func (e *modifiedEntry) onEsc() {
-	fmt.Println(e.Entry.Text)
-	e.Entry.SetText("")
-}
-
-func (e *modifiedEntry) onEnter() {
-	fn := findBtn(input_widget, screen_widget)
-	fn()
 }
 
 // newEscapeEntry - rewriting basic entry widget
@@ -227,31 +202,67 @@ func makeModeSelection_widget() *widget.RadioGroup {
 	return s
 }
 
-// func makeContainerTree(mode *widget.RadioGroup, ) *fyne.Container {
+// findBtn - executes searching mode, depending on switch
+func findBtn(input *modifiedEntry, scr *widget.Label) func() {
 
-// 	return
-// }
+	assert("findBtn", input != nil, scr != nil)
+	return func() {
+		progressBar.Start()
+		progressBar.Show()
+		argCache = nil
+		rootDir = ""
+		switch appMode {
+		case 0:
+			argCache = append(argCache, input.Text)
+		case 1:
+			rootDir = input.Text
+		}
+		result := executer()
+		// dataBox.Add(widget.NewLabel(result))
+		scr.Text = result
+		input.Text = ""
+		input.Refresh()
+		progressBar.Hide()
+		progressBar.Stop()
+	}
+}
 
-type Input_widget struct {
-	Mode_widget  *widget.RadioGroup
-	Input_widget *modifiedEntry
+// onEsc - clears entry
+func (e *modifiedEntry) onEsc() {
+	fmt.Println(e.Entry.Text)
+	e.Entry.SetText("")
+}
+
+func (e *modifiedEntry) onEnter() {
+
+	fn := findBtn(inputTab.Entry, screen_widget)
+	fn()
+
 }
 
 func makeForm(i *modifiedEntry, s *widget.Label) *widget.Form {
+	assert("makeForm", i != nil, s != nil)
 	form := &widget.Form{
 		Items: []*widget.FormItem{
 			{Text: "Data", Widget: i, HintText: "input data"},
 		},
 		OnCancel: nil,
+		// OnCancel: doCancel(),
 		OnSubmit: findBtn(i, s),
 	}
 	i.Validator = validation.NewRegexp(`.+`, "input smthing")
 	return form
 }
 
+// func doCancel() func() {
+// 	return func() {}
+// }
+
+// assert - выдает сообщения об ошибке если есть nil
 func assert(label string, args ...bool) {
-	for _, arg := range args {
+	for i, arg := range args {
 		if !arg {
+			fmt.Printf("arg %v\narg %v\n", i, arg)
 			panic(label)
 		}
 	}
@@ -259,9 +270,9 @@ func assert(label string, args ...bool) {
 
 func makeContainerTree(modeWidget *widget.RadioGroup, entry *modifiedEntry, form *widget.Form) *fyne.Container {
 	assert("makeContainerTree", modeWidget != nil, entry != nil, form != nil)
-	dataBox := container.NewWithoutLayout(screen_widget)
-	dataBoxScroll := container.NewScroll(dataBox)
-	allContainers := container.NewBorder(
+	screen_container := container.NewWithoutLayout(screen_widget)
+	screen_scrool_container := container.NewScroll(screen_container)
+	all_container := container.NewBorder(
 		// top
 		container.NewVBox(
 			container.NewBorder(
@@ -270,41 +281,39 @@ func makeContainerTree(modeWidget *widget.RadioGroup, entry *modifiedEntry, form
 				),
 			),
 			widget.NewSeparator(),
+			progressBar,
 		),
 		nil,
 		nil,
 		nil,
 		// other
-		dataBoxScroll,
+		screen_scrool_container,
 	)
-	return allContainers
-	// return nil
+	return all_container
 }
 
 func gui() {
-	myApp := app.New()
-	myWindow := myApp.NewWindow("Notepad")
-	myWindow.Resize(fyne.NewSize(1000, 500))
+	the_app := app.New()
+	app_window := the_app.NewWindow("Notepad")
+	app_window.Resize(fyne.NewSize(1000, 500))
 
-	mode := makeModeSelection_widget()
-	entry := newModifiedEntry()
+	mode_widget := makeModeSelection_widget()
+	entry_widget := newModifiedEntry()
 
-	i := Input_widget{
-		Mode_widget:  mode,
-		Input_widget: entry,
+	inputTab = Input_widget{
+		Mode:  mode_widget,
+		Entry: entry_widget,
 	}
-	// fmt.Printf("debug %v\n", i)
 	screen_widget = widget.NewLabel("")
 
-	form := makeForm(i.Input_widget, screen_widget)
-	fmt.Printf("debug form %v\n", form)
+	form_widget := makeForm(inputTab.Entry, screen_widget)
+	progressBar = widget.NewProgressBarInfinite()
+	progressBar.Hide()
 
-	_ = form
-	tree := makeContainerTree(i.Mode_widget, i.Input_widget, nil)
-	fmt.Printf("debug tree %v\n", tree)
+	tree_container := makeContainerTree(inputTab.Mode, inputTab.Entry, form_widget)
 
-	myWindow.SetContent(tree)
-	myWindow.ShowAndRun()
+	app_window.SetContent(tree_container)
+	app_window.ShowAndRun()
 }
 
 func main() {
