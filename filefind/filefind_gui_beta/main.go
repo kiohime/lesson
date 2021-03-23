@@ -64,7 +64,8 @@ func (e *modifiedEntry) onEnter() {
 	assert(e)
 	assert(e.input)
 	// findBtn(input_widget.Entry, screen_widget)
-	decider(e.input.Entry, screen_widget)
+	fmt.Printf("on onEnter AppSet is %v\n", AppSet.AppMode)
+	decider(e.input.Entry, screen_widget, AppSet)
 
 }
 
@@ -108,14 +109,20 @@ func settingsChanged(c string) {
 	fmt.Println(c)
 	switch c {
 	case "каталоги":
-		scanDir = true
-		scanFile = false
+		AppSet.ScanMode = 0
 	case "файлы":
-		scanDir = false
-		scanFile = true
+		AppSet.ScanMode = 1
 		// case "И ТО, И ДРУГОЕ":
 	}
 }
+
+// //////////////////////////////////////////////////////////
+type AppSettings struct {
+	AppMode  int
+	ScanMode int
+}
+
+var AppSet *AppSettings
 
 // ////////////////////////////////////////////////////////////////////////
 type Input_widget struct {
@@ -133,7 +140,7 @@ func newInputWidget(m *widget.RadioGroup, e *modifiedEntry, f *widget.Form, s *m
 //bahniFile - создает файл с именем inputName из массива данных inputData, данные добавляются через ньюлайн
 func bahniFile(inputName string, inputData *[]string) error {
 	fmt.Println("#### bahnifile")
-	// fmt.Println(inputName)
+	fmt.Println(inputName)
 	// fmt.Println(inputData)
 
 	// err := os.Remove(inputName)
@@ -170,6 +177,10 @@ func keyWait() {
 // блок инициализации: установка рабочего пути для файлов базы и поиска
 func initialize() error {
 	fmt.Println("### initialize")
+	AppSet = &AppSettings{
+		AppMode:  appMode,
+		ScanMode: scanMode,
+	}
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return fmt.Errorf("UserHomeDir error: %v", err)
@@ -225,9 +236,10 @@ func initialize() error {
 // }
 
 //executer - запускает программу в устновленном режиме
-func executer() string {
+func executer(aset *AppSettings) string {
 	result := ""
-	switch appMode {
+	fmt.Printf("on executer AppMode is %v\n", aset.AppMode)
+	switch aset.AppMode {
 	case 0:
 		base, e := readBaser()
 		if e != nil {
@@ -241,7 +253,7 @@ func executer() string {
 		// Временно! пока галочек нет!!!!
 		// scanDir = true
 
-		e := writeBaser()
+		e := writeBaser(aset)
 		if e != nil {
 			a := fmt.Errorf("error in writing base : %v", e)
 			fmt.Println(a)
@@ -266,14 +278,15 @@ func (e *modifiedEntry) TypedKey(key *fyne.KeyEvent) {
 }
 
 // newModeWidget
-func newModeWidget() *widget.RadioGroup {
+func newModeWidget(aset *AppSettings) *widget.RadioGroup {
 	s := widget.NewRadioGroup([]string{"Поиск", "Сканирование"}, func(s string) {
 		switch s {
 		case "Поиск":
-			appMode = 0
+			aset.AppMode = 0
 		case "Сканирование":
-			appMode = 1
+			aset.AppMode = 1
 		}
+		fmt.Printf("set AppMode %v\n", aset.AppMode)
 	})
 	s.SetSelected("Поиск")
 	s.Refresh()
@@ -281,20 +294,22 @@ func newModeWidget() *widget.RadioGroup {
 }
 
 // decider - executes searching mode, depending on switch
-func decider(input *modifiedEntry, scr *widget.Label) {
+func decider(input *modifiedEntry, scr *widget.Label, aset *AppSettings) {
 	assert(input, scr)
+
+	fmt.Printf("on decider AppMode is %v\n", aset.AppMode)
 
 	progressBar.Start()
 	progressBar.Show()
 	argCache = nil
 	rootDir = ""
-	switch appMode {
+	switch aset.AppMode {
 	case 0:
 		argCache = append(argCache, input.Text)
 	case 1:
 		rootDir = input.Text
 	}
-	result := executer()
+	result := executer(aset)
 	// dataBox.Add(widget.NewLabel(result))
 	scr.Text = result
 	input.Text = ""
@@ -388,7 +403,7 @@ func gui() {
 	progressBar.Hide()
 
 	screen_widget = widget.NewLabel("")
-	mode_widget := newModeWidget()
+	mode_widget := newModeWidget(AppSet)
 	entry_widget := newEntry()
 	form_widget := newForm(entry_widget, screen_widget)
 	settings_widget := newSettings(mode_widget)

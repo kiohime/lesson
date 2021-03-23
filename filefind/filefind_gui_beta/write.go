@@ -83,7 +83,7 @@ func rootCheck(r string) error {
 ////////////////////////////////////////////////
 
 //writeBaser - устанавливает режим отрисовки скинированного
-func writeBaser() error {
+func writeBaser(aset *AppSettings) error {
 	fmt.Println("# writebaser")
 
 	// проверка переменной пути на то, является ли та настоящим путем, если нет - остановить программу
@@ -93,23 +93,24 @@ func writeBaser() error {
 		fmt.Println("root checking error")
 		return err
 	}
-	// установка очереди отработки флагов и режимов отрисовки по флагам. по умолчанию считывает и каталоги, и файлы
-	switch {
-	case scanDir && !scanFile:
-		// -d
-		scanMode = 0
-		fmt.Println("scanDir set")
-	case !scanDir && scanFile:
-		// -f
-		scanMode = 1
-		fmt.Println("scanFile set")
-	}
+	// // установка очереди отработки флагов и режимов отрисовки по флагам. по умолчанию считывает и каталоги, и файлы
+	// switch {
+	// case aset.IsScanDir && !aset.IsScanFile:
+	// 	// -d
+	// 	aset.Mode = 0
+	// case !aset.IsScanDir && aset.IsScanFile:
+	// 	// -f
+	// 	aset.Mode = 1
+	// 	fmt.Println("scanFile set")
+	// }
 
 	exportFileName := ""
-	switch scanMode {
+	switch aset.AppMode {
 	case 0:
+		fmt.Println("scanDir set")
 		exportFileName = baseNameDirs
 	case 1:
+		fmt.Println("scanFile set")
 		exportFileName = baseNameFiles
 	}
 
@@ -119,7 +120,7 @@ func writeBaser() error {
 	res, errs := walk.StartWalk(
 		[]string{rootDir},
 		walk.Options{
-			Mode:     scanMode,
+			Mode:     aset.ScanMode,
 			SkipDir:  !scanDir,
 			SkipFile: !scanFile,
 		},

@@ -35,7 +35,7 @@ func readBaser() ([]string, error) {
 	// exportFullPath := workDir + exportFileName
 
 	base := workDir + baseNameDirs
-	fmt.Println(base)
+	// fmt.Println(base)
 	f, err := os.Open(base)
 	if err != nil {
 		return nil, err
