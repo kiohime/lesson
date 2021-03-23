@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
+	"runtime"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -21,6 +23,7 @@ var (
 	scanMode       int
 	argCache       []string
 	dataForPrinter []string
+	quitProcess    chan bool
 
 	appMode        int
 	workDir        = ""
@@ -30,18 +33,101 @@ var (
 )
 var (
 	progressBar   *widget.ProgressBarInfinite
-	inputTab      Input_widget
-	input_widget  *modifiedEntry
+	entry_widget  *modifiedEntry
 	screen_widget *widget.Label
 )
 
+// /////////////////////////////////////////////////////////////////////////
 type modifiedEntry struct {
 	widget.Entry
+	input *Input_widget
 }
 
+// newEscapeEntry - rewriting basic entry widget
+func newModifiedEntry() *modifiedEntry {
+	entry := &modifiedEntry{}
+	entry.ExtendBaseWidget(entry)
+	return entry
+}
+
+func newEntry() *modifiedEntry {
+	return newModifiedEntry()
+}
+
+// onEsc - clears entry
+func (e *modifiedEntry) onEsc() {
+	// fmt.Println(e.Entry.Text)
+	e.Entry.SetText("")
+}
+
+func (e *modifiedEntry) onEnter() {
+	assert(e)
+	assert(e.input)
+	// findBtn(input_widget.Entry, screen_widget)
+	decider(e.input.Entry, screen_widget)
+
+}
+
+func (e *modifiedEntry) setInput(input *Input_widget) {
+	e.input = input
+}
+
+// /////////////////////////////////////////////////////////////
+type modifiedSelect struct {
+	widget.Select
+	settings *Input_widget
+}
+
+func newModifiedSelect() *modifiedSelect {
+	selEntry := &modifiedSelect{}
+	selEntry.ExtendBaseWidget(selEntry)
+	return selEntry
+}
+
+func (s *modifiedSelect) setSettings(settings *Input_widget) {
+	assert(s)
+	s.settings = settings
+}
+
+func newSelect() *modifiedSelect {
+	s := newModifiedSelect()
+
+	return s
+}
+
+func newSettings(m *widget.RadioGroup) *modifiedSelect {
+	check := newSelect()
+	t := []string{"каталоги", "файлы", "И ТО, И ДРУГОЕ"}
+	check.Options = t
+	check.OnChanged = settingsChanged
+	// check.Disable()
+	return check
+}
+
+func settingsChanged(c string) {
+	fmt.Println(c)
+	switch c {
+	case "каталоги":
+		scanDir = true
+		scanFile = false
+	case "файлы":
+		scanDir = false
+		scanFile = true
+		// case "И ТО, И ДРУГОЕ":
+	}
+}
+
+// ////////////////////////////////////////////////////////////////////////
 type Input_widget struct {
-	Mode  *widget.RadioGroup
-	Entry *modifiedEntry
+	Mode   *widget.RadioGroup
+	Entry  *modifiedEntry
+	Form   *widget.Form
+	Option *modifiedSelect
+}
+
+func newInputWidget(m *widget.RadioGroup, e *modifiedEntry, f *widget.Form, s *modifiedSelect) *Input_widget {
+	assert(m, e, f, s)
+	return &Input_widget{Mode: m, Entry: e, Form: f, Option: s}
 }
 
 //bahniFile - создает файл с именем inputName из массива данных inputData, данные добавляются через ньюлайн
@@ -153,25 +239,17 @@ func executer() string {
 	case 1:
 
 		// Временно! пока галочек нет!!!!
-		scanDir = true
+		// scanDir = true
 
 		e := writeBaser()
 		if e != nil {
 			a := fmt.Errorf("error in writing base : %v", e)
 			fmt.Println(a)
-			// os.Exit(1)
 		}
 		// result = "000000000000000000000000000000"
 		fmt.Println("THE END")
 	}
 	return result
-}
-
-// newEscapeEntry - rewriting basic entry widget
-func newModifiedEntry() *modifiedEntry {
-	entry := &modifiedEntry{}
-	entry.ExtendBaseWidget(entry)
-	return entry
 }
 
 // TypedKey - overriding default TypedKey method in fyne.Focusable, adding switch
@@ -187,8 +265,8 @@ func (e *modifiedEntry) TypedKey(key *fyne.KeyEvent) {
 	}
 }
 
-// makeModeSelection_widget
-func makeModeSelection_widget() *widget.RadioGroup {
+// newModeWidget
+func newModeWidget() *widget.RadioGroup {
 	s := widget.NewRadioGroup([]string{"Поиск", "Сканирование"}, func(s string) {
 		switch s {
 		case "Поиск":
@@ -202,83 +280,92 @@ func makeModeSelection_widget() *widget.RadioGroup {
 	return s
 }
 
-// findBtn - executes searching mode, depending on switch
-func findBtn(input *modifiedEntry, scr *widget.Label) func() {
+// decider - executes searching mode, depending on switch
+func decider(input *modifiedEntry, scr *widget.Label) {
+	assert(input, scr)
 
-	assert("findBtn", input != nil, scr != nil)
-	return func() {
-		progressBar.Start()
-		progressBar.Show()
-		argCache = nil
-		rootDir = ""
-		switch appMode {
-		case 0:
-			argCache = append(argCache, input.Text)
-		case 1:
-			rootDir = input.Text
-		}
-		result := executer()
-		// dataBox.Add(widget.NewLabel(result))
-		scr.Text = result
-		input.Text = ""
-		input.Refresh()
-		progressBar.Hide()
-		progressBar.Stop()
+	progressBar.Start()
+	progressBar.Show()
+	argCache = nil
+	rootDir = ""
+	switch appMode {
+	case 0:
+		argCache = append(argCache, input.Text)
+	case 1:
+		rootDir = input.Text
 	}
-}
-
-// onEsc - clears entry
-func (e *modifiedEntry) onEsc() {
-	fmt.Println(e.Entry.Text)
-	e.Entry.SetText("")
-}
-
-func (e *modifiedEntry) onEnter() {
-
-	fn := findBtn(inputTab.Entry, screen_widget)
-	fn()
+	result := executer()
+	// dataBox.Add(widget.NewLabel(result))
+	scr.Text = result
+	input.Text = ""
+	input.Refresh()
+	progressBar.Hide()
+	progressBar.Stop()
 
 }
 
-func makeForm(i *modifiedEntry, s *widget.Label) *widget.Form {
-	assert("makeForm", i != nil, s != nil)
+func newForm(i *modifiedEntry, s *widget.Label) *widget.Form {
+	assert(i, s)
 	form := &widget.Form{
 		Items: []*widget.FormItem{
 			{Text: "Data", Widget: i, HintText: "input data"},
 		},
 		OnCancel: nil,
-		// OnCancel: doCancel(),
-		OnSubmit: findBtn(i, s),
+		OnSubmit: i.onEnter,
+
+		// OnSubmit: findBtn(i, s),
 	}
 	i.Validator = validation.NewRegexp(`.+`, "input smthing")
 	return form
 }
 
-// func doCancel() func() {
-// 	return func() {}
-// }
-
-// assert - выдает сообщения об ошибке если есть nil
-func assert(label string, args ...bool) {
+func assert(args ...interface{}) {
+	okGlobal := true
+	msg := "assertion failed:\n"
 	for i, arg := range args {
-		if !arg {
-			fmt.Printf("arg %v\narg %v\n", i, arg)
-			panic(label)
+		// fmt.Printf("____%v: %v\n", i, arg)
+		ok := true
+		switch t := arg.(type) {
+		case bool:
+			ok = t
+		case error:
+			ok = t == nil
+		case nil:
+			ok = false
+			fmt.Printf("NILNIL\n")
 		}
+		if reflect.ValueOf(arg).IsNil() {
+			ok = false
+		}
+
+		if !ok {
+			_, file, line, _ := runtime.Caller(1)
+			msg += fmt.Sprintf("\t(%v, %T) %v: %v\n", i, arg, file, line)
+		}
+		okGlobal = okGlobal && ok
+	}
+	if !okGlobal {
+		panic(msg)
 	}
 }
 
-func makeContainerTree(modeWidget *widget.RadioGroup, entry *modifiedEntry, form *widget.Form) *fyne.Container {
-	assert("makeContainerTree", modeWidget != nil, entry != nil, form != nil)
+func makeContainerTree(i *Input_widget) *fyne.Container {
 	screen_container := container.NewWithoutLayout(screen_widget)
-	screen_scrool_container := container.NewScroll(screen_container)
+	screen_scroll_container := container.NewScroll(screen_container)
+	mode_settings_container := container.NewVBox(
+		i.Mode,
+		widget.NewSeparator(),
+		i.Option,
+		// widget.NewSeparator(),
+	)
+	form_container := container.NewBorder(
+		nil, nil, nil, nil, i.Form,
+	)
 	all_container := container.NewBorder(
 		// top
 		container.NewVBox(
 			container.NewBorder(
-				nil, nil, modeWidget, nil, container.NewBorder(
-					nil, nil, widget.NewSeparator(), nil, form,
-				),
+				nil, nil, mode_settings_container, nil, form_container,
 			),
 			widget.NewSeparator(),
 			progressBar,
@@ -287,7 +374,7 @@ func makeContainerTree(modeWidget *widget.RadioGroup, entry *modifiedEntry, form
 		nil,
 		nil,
 		// other
-		screen_scrool_container,
+		screen_scroll_container,
 	)
 	return all_container
 }
@@ -297,20 +384,22 @@ func gui() {
 	app_window := the_app.NewWindow("Notepad")
 	app_window.Resize(fyne.NewSize(1000, 500))
 
-	mode_widget := makeModeSelection_widget()
-	entry_widget := newModifiedEntry()
-
-	inputTab = Input_widget{
-		Mode:  mode_widget,
-		Entry: entry_widget,
-	}
-	screen_widget = widget.NewLabel("")
-
-	form_widget := makeForm(inputTab.Entry, screen_widget)
 	progressBar = widget.NewProgressBarInfinite()
 	progressBar.Hide()
 
-	tree_container := makeContainerTree(inputTab.Mode, inputTab.Entry, form_widget)
+	screen_widget = widget.NewLabel("")
+	mode_widget := newModeWidget()
+	entry_widget := newEntry()
+	form_widget := newForm(entry_widget, screen_widget)
+	settings_widget := newSettings(mode_widget)
+	settings_widget.Selected = "каталоги"
+	settings_widget.OnChanged("каталоги")
+
+	input_widget := newInputWidget(mode_widget, entry_widget, form_widget, settings_widget)
+	entry_widget.setInput(input_widget)
+	settings_widget.setSettings(input_widget)
+
+	tree_container := makeContainerTree(input_widget)
 
 	app_window.SetContent(tree_container)
 	app_window.ShowAndRun()

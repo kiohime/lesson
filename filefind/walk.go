@@ -49,7 +49,7 @@ func startWalk(rootDir string, options Options) ([]string, []error) {
 		switch options.Mode {
 
 		// только каталоги
-		case 1:
+		case 0:
 			// fmt.Println("scanDir is", scanDir)
 			// fmt.Println("isDir is", isDir)
 
@@ -60,7 +60,7 @@ func startWalk(rootDir string, options Options) ([]string, []error) {
 			}
 
 		// только файлы
-		case 2:
+		case 1:
 			if !options.SkipFile && isFile {
 				// fmt.Printf("visited : %q\n", path)
 				ret = append(ret, path)

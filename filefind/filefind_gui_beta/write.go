@@ -97,19 +97,19 @@ func writeBaser() error {
 	switch {
 	case scanDir && !scanFile:
 		// -d
-		scanMode = 1
+		scanMode = 0
 		fmt.Println("scanDir set")
 	case !scanDir && scanFile:
 		// -f
-		scanMode = 2
+		scanMode = 1
 		fmt.Println("scanFile set")
 	}
 
 	exportFileName := ""
 	switch scanMode {
-	case 1:
+	case 0:
 		exportFileName = baseNameDirs
-	case 2:
+	case 1:
 		exportFileName = baseNameFiles
 	}
 
