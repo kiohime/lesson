@@ -41,17 +41,8 @@ func writeBaser(aset *AppSettings) error {
 		fmt.Println("root checking error")
 		return err
 	}
-	exportFileName := ""
 	fmt.Printf("ScanMode is %v", aset.ScanMode)
-	switch aset.ScanMode {
-	case 0:
-		exportFileName = aset.BaseNameDirs
-
-	case 1:
-		exportFileName = aset.BaseNameFiles
-	}
-
-	exportFullPath := aset.WorkDir + exportFileName
+	exportFullPath := aset.WorkDir + aset.TargetFileName
 
 	// парсит
 	res, errs := walk.StartWalk(

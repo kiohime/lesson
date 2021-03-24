@@ -15,7 +15,6 @@ func readBaser(aset *AppSettings) ([]string, error) {
 	fmt.Println("### readbaser")
 
 	// проверка на кол-во аргументов на 24 марта 2021 аргумент всегда один,
-	// так что эта часть кода вообщето не нужна?
 	argLen := len(argCache)
 	fmt.Println("11111  ", argLen)
 	fmt.Println()
@@ -23,8 +22,9 @@ func readBaser(aset *AppSettings) ([]string, error) {
 		err := errors.New("no search arguments was inputed")
 		return nil, err
 	}
+	// так что эта часть кода вообщето не нужна?
 
-	base := aset.WorkDir + aset.BaseNameDirs
+	base := aset.WorkDir + aset.TargetFileName
 	// fmt.Println(base)
 	f, err := os.Open(base)
 	if err != nil {

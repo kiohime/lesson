@@ -84,11 +84,14 @@ func settingsChanged(c string) {
 	switch c {
 	case "каталоги":
 		AppSet.ScanMode = 0
+		AppSet.TargetFileName = AppSet.BaseNameDirs
 	case "файлы":
 		AppSet.ScanMode = 1
+		AppSet.TargetFileName = AppSet.BaseNameFiles
 		// case "И ТО, И ДРУГОЕ":
 	}
 	fmt.Printf("on settingChanged ScanMode is %v\n", AppSet.ScanMode)
+	fmt.Printf("on settingChanged TargetFileName is %v\n", AppSet.TargetFileName)
 
 }
 

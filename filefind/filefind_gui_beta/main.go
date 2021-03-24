@@ -35,6 +35,7 @@ type AppSettings struct {
 	BaseNameFiles  string
 	BaseNameDirs   string
 	ResultFileName string
+	TargetFileName string
 }
 
 // блок инициализации: установка рабочего пути для файлов базы и поиска
