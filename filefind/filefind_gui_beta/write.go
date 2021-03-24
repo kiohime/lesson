@@ -105,7 +105,7 @@ func writeBaser(aset *AppSettings) error {
 	// }
 
 	exportFileName := ""
-	switch aset.AppMode {
+	switch aset.ScanMode {
 	case 0:
 		fmt.Println("scanDir set")
 		exportFileName = baseNameDirs
@@ -120,9 +120,9 @@ func writeBaser(aset *AppSettings) error {
 	res, errs := walk.StartWalk(
 		[]string{rootDir},
 		walk.Options{
-			Mode:     aset.ScanMode,
-			SkipDir:  !scanDir,
-			SkipFile: !scanFile,
+			WalkScanMode: aset.ScanMode,
+			// SkipDir:      !scanDir,
+			// SkipFile:     !scanFile,
 		},
 	)
 	argCache = res
