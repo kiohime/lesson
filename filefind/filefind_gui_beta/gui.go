@@ -33,12 +33,12 @@ func (e *modifiedEntry) onEsc() {
 	e.Entry.SetText("")
 }
 
-func (e *modifiedEntry) onEnter(aset *AppSettings) {
+func (e *modifiedEntry) onEnter(aset *Settings, adata *Data) {
 	assert(e)
 	assert(e.input)
 	// findBtn(input_widget.Entry, screen_widget)
 	fmt.Printf("on onEnter AppMode is %v\n", aset.AppMode)
-	decider(e.input.Entry, screen_widget, aset)
+	mainDecider(e.input.Entry, screen_widget, aset, adata)
 
 }
 
@@ -88,7 +88,8 @@ func settingsChanged(c string) {
 	case "файлы":
 		AppSet.ScanMode = 1
 		AppSet.TargetFileName = AppSet.BaseNameFiles
-		// case "И ТО, И ДРУГОЕ":
+	case "И ТО, И ДРУГОЕ":
+		AppSet.ScanMode = 2
 	}
 	fmt.Printf("on settingChanged ScanMode is %v\n", AppSet.ScanMode)
 	fmt.Printf("on settingChanged TargetFileName is %v\n", AppSet.TargetFileName)
@@ -109,7 +110,7 @@ func newInputWidget(m *widget.RadioGroup, e *modifiedEntry, f *widget.Form, s *m
 }
 
 // newModeWidget
-func newModeWidget(aset *AppSettings) *widget.RadioGroup {
+func newModeWidget(aset *Settings) *widget.RadioGroup {
 	s := widget.NewRadioGroup([]string{"Поиск", "Сканирование"}, func(s string) {
 		switch s {
 		case "Поиск":
@@ -126,14 +127,14 @@ func newModeWidget(aset *AppSettings) *widget.RadioGroup {
 
 // //////////////////////////////////////////////////////////////////
 
-func newForm(i *modifiedEntry, s *widget.Label, aset *AppSettings) *widget.Form {
+func newForm(i *modifiedEntry, s *widget.Label, aset *Settings, adata *Data) *widget.Form {
 	assert(i, s)
 	form := &widget.Form{
 		Items: []*widget.FormItem{
 			{Text: "Data", Widget: i, HintText: "input data"},
 		},
 		OnCancel: nil,
-		OnSubmit: func() { i.onEnter(aset) },
+		OnSubmit: func() { i.onEnter(aset, adata) },
 
 		// OnSubmit: findBtn(i, s),
 	}
@@ -171,7 +172,7 @@ func makeContainerTree(i *Input_widget) *fyne.Container {
 	return all_container
 }
 
-func gui(aset *AppSettings) {
+func gui(aset *Settings, adata *Data) {
 	the_app := app.New()
 	app_window := the_app.NewWindow("Notepad")
 	app_window.Resize(fyne.NewSize(1000, 500))
@@ -182,7 +183,7 @@ func gui(aset *AppSettings) {
 	screen_widget = widget.NewLabel("")
 	mode_widget := newModeWidget(aset)
 	entry_widget := newEntry()
-	form_widget := newForm(entry_widget, screen_widget, aset)
+	form_widget := newForm(entry_widget, screen_widget, aset, adata)
 	settings_widget := newSettings(mode_widget)
 	settings_widget.Selected = "каталоги"
 	settings_widget.OnChanged("каталоги")

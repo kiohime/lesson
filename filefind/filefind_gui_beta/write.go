@@ -30,8 +30,8 @@ func rootCheck(r string) error {
 
 ////////////////////////////////////////////////
 
-//writeBaser - устанавливает режим отрисовки скинированного
-func writeBaser(aset *AppSettings) error {
+//writeBaser - пишет базу
+func writeBaser(aset *Settings, adata *Data) error {
 	fmt.Println("# writebaser")
 
 	// проверка переменной пути на то, является ли та настоящим путем, если нет - остановить программу
@@ -51,10 +51,10 @@ func writeBaser(aset *AppSettings) error {
 			WalkScanMode: aset.ScanMode,
 		},
 	)
-	argCache = res
+	// adata.Cache = res
 
 	// создает файл
-	err = bahniFile(exportFullPath, &argCache)
+	err = bahniFile(exportFullPath, &res)
 	if err != nil {
 		errs = append(errs, err)
 	}

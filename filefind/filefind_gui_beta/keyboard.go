@@ -21,7 +21,7 @@ func (e *modifiedEntry) TypedKey(key *fyne.KeyEvent) {
 	case fyne.KeyEscape:
 		e.onEsc()
 	case fyne.KeyEnter, fyne.KeyReturn:
-		e.onEnter(AppSet)
+		e.onEnter(AppSet, AppData)
 	default:
 		e.Entry.TypedKey(key)
 	}

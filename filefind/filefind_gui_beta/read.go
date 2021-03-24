@@ -10,13 +10,13 @@ import (
 )
 
 //readBaser - reading mode : сканирует существующую базу
-func readBaser(aset *AppSettings) ([]string, error) {
-	dataForPrinter = nil
+func readBaser(aset *Settings, adata *Data) ([]string, error) {
+	result := []string{}
 	fmt.Println("### readbaser")
 
 	// проверка на кол-во аргументов на 24 марта 2021 аргумент всегда один,
-	argLen := len(argCache)
-	fmt.Println("11111  ", argLen)
+	argLen := len(adata.Cache)
+	// fmt.Println("11111  ", argLen)
 	fmt.Println()
 	if argLen == 0 {
 		err := errors.New("no search arguments was inputed")
@@ -41,31 +41,22 @@ func readBaser(aset *AppSettings) ([]string, error) {
 		line = strings.TrimSpace(line)
 		lineFile := filepath.Base(line)
 
-		for _, a := range argCache {
+		for _, a := range adata.Cache {
 			// fmt.Println("argument is ", a)
 			if strings.Contains(lineFile, a) {
-				dataForPrinter = append(dataForPrinter, line)
-				// fmt.Println(line)
-				// os.Exit(1)
+				result = append(result, line)
 			}
 		}
-		// countScan++
 	}
 
-	read := aset.WorkDir + aset.ResultFileName
+	// read := aset.WorkDir + aset.ResultFileName
 
-	err = bahniFile(read, &dataForPrinter)
+	// err = bahniFile(read, &adata.PrintData)
 
-	if err != nil {
-		fmt.Printf("error in making file : %q\n", err)
-		return nil, err
-	}
-
-	// err = printer(dataForPrinter...)
 	// if err != nil {
-	// 	fmt.Printf("error in printing : %q\n", err)
-	// 	return err
+	// 	fmt.Printf("error in making file : %q\n", err)
+	// 	return nil, err
 	// }
 
-	return dataForPrinter, err
+	return result, err
 }

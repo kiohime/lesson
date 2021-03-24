@@ -12,22 +12,27 @@ import (
 )
 
 var (
-	argCache       []string
-	dataForPrinter []string
-)
-var (
 	progressBar   *widget.ProgressBarInfinite
 	entry_widget  *modifiedEntry
 	screen_widget *widget.Label
 )
 
+// //////////////////////////////////////////////////////////////////////
+
+var AppData *Data
+
+type Data struct {
+	Cache     []string
+	PrintData []string
+}
+
 // ///////////////СТРУКТУРА НАСТРОЙКИ ПРИЛОЖЕНИЯ/////////////////////////////
 
 // AppSet - глобальная переменная с настройками приложения
-var AppSet *AppSettings
+var AppSet *Settings
 
-// AppSettings - глобальная структура с настройками приложения
-type AppSettings struct {
+// Settings - глобальная структура с настройками приложения
+type Settings struct {
 	AppMode        int
 	ScanMode       int
 	RootDir        string
@@ -39,7 +44,7 @@ type AppSettings struct {
 }
 
 // блок инициализации: установка рабочего пути для файлов базы и поиска
-func initialize(aset *AppSettings) error {
+func initialize(aset *Settings) error {
 	fmt.Println("### initialize")
 
 	aset.BaseNameFiles = "filesearch_files.txt"
@@ -93,22 +98,25 @@ func bahniFile(inputName string, inputData *[]string) error {
 	return nil
 }
 
-// decider - executes searching mode, depending on switch
-func decider(input *modifiedEntry, scr *widget.Label, aset *AppSettings) {
+// mainDecider - executes searching mode, depending on switch
+func mainDecider(input *modifiedEntry, scr *widget.Label, aset *Settings, adata *Data) {
 	assert(input, scr)
 
 	fmt.Printf("on decider AppMode is %v\n", aset.AppMode)
 
 	progressBar.Start()
 	progressBar.Show()
-	argCache = nil
+	adata.Cache = nil
+	result := ""
+
 	switch aset.AppMode {
 	case 0:
-		argCache = append(argCache, input.Text)
+		adata.Cache = append(adata.Cache, input.Text)
 	case 1:
 		aset.RootDir = input.Text
 	}
-	result := executer(aset)
+	result = executer(aset, adata)
+	// assert(result)
 	// dataBox.Add(widget.NewLabel(result))
 	scr.Text = result
 	input.Text = ""
@@ -118,25 +126,71 @@ func decider(input *modifiedEntry, scr *widget.Label, aset *AppSettings) {
 }
 
 //executer - запускает программу в устновленном режиме
-func executer(aset *AppSettings) string {
+func executer(aset *Settings, adata *Data) string {
 	result := ""
 	fmt.Printf("on executer AppMode is %v\n", aset.AppMode)
 	switch aset.AppMode {
 	case 0:
-		base, e := readBaser(aset)
-		if e != nil {
-			a := fmt.Errorf("error in reading base : %v", e)
-			fmt.Println(a)
-			// os.Exit(1)
+		base := []string{}
+		allBase := []string{}
+		var e error
+		switch {
+		case aset.ScanMode == 2:
+			for i := 0; i < 2; i++ {
+				aset.ScanMode = i
+				switch aset.ScanMode {
+				case 0:
+					aset.TargetFileName = aset.BaseNameDirs
+				case 1:
+					aset.TargetFileName = aset.BaseNameFiles
+				}
+				base, e = readBaser(aset, adata)
+				fmt.Printf("%v\t%v\n", i, base)
+				if e != nil {
+					a := fmt.Errorf("error in reading base : %v", e)
+					fmt.Println(a)
+					// os.Exit(1)
+				}
+				allBase = append(allBase, base...)
+			}
+			aset.ScanMode = 2
+
+		case aset.ScanMode == 0 || aset.ScanMode == 1:
+			base, e = readBaser(aset, adata)
+			if e != nil {
+				a := fmt.Errorf("error in reading base : %v", e)
+				fmt.Println(a)
+				// os.Exit(1)
+			}
 		}
-		result = strings.Join(base, "\n")
+		result = strings.Join(allBase, "\n")
 	case 1:
-		e := writeBaser(aset)
-		if e != nil {
-			a := fmt.Errorf("error in writing base : %v", e)
-			fmt.Println(a)
+		switch {
+		case aset.ScanMode == 2:
+
+			for i := 0; i < 2; i++ {
+				aset.ScanMode = i
+				switch aset.ScanMode {
+				case 0:
+					aset.TargetFileName = aset.BaseNameDirs
+				case 1:
+					aset.TargetFileName = aset.BaseNameFiles
+				}
+				e := writeBaser(aset, adata)
+				if e != nil {
+					a := fmt.Errorf("error in writing base : %v", e)
+					fmt.Println(a)
+				}
+			}
+			aset.ScanMode = 2
+
+		case aset.ScanMode == 0 || aset.ScanMode == 1:
+			e := writeBaser(aset, adata)
+			if e != nil {
+				a := fmt.Errorf("error in writing base : %v", e)
+				fmt.Println(a)
+			}
 		}
-		// result = "000000000000000000000000000000"
 		fmt.Println("THE END")
 	}
 	return result
@@ -174,12 +228,13 @@ func assert(args ...interface{}) {
 }
 
 func main() {
-	AppSet = &AppSettings{}
+	AppSet = &Settings{}
+	AppData = &Data{}
 	err := initialize(AppSet)
 	if err != nil {
 		fmt.Printf("Error in initialisation : %q\n", err)
 		keyWait()
 		os.Exit(1)
 	}
-	gui(AppSet)
+	gui(AppSet, AppData)
 }
