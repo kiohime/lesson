@@ -10,7 +10,7 @@ import (
 )
 
 //readBaser - reading mode : сканирует существующую базу
-func readBaser() ([]string, error) {
+func readBaser(aset *AppSettings) ([]string, error) {
 	dataForPrinter = nil
 	fmt.Println("### readbaser")
 
@@ -34,7 +34,7 @@ func readBaser() ([]string, error) {
 
 	// exportFullPath := workDir + exportFileName
 
-	base := workDir + baseNameDirs
+	base := aset.WorkDir + aset.BaseNameDirs
 	// fmt.Println(base)
 	f, err := os.Open(base)
 	if err != nil {
@@ -62,7 +62,7 @@ func readBaser() ([]string, error) {
 		// countScan++
 	}
 
-	read := workDir + resultFileName
+	read := aset.WorkDir + aset.ResultFileName
 
 	err = bahniFile(read, &dataForPrinter)
 

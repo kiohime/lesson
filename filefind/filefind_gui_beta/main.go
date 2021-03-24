@@ -17,25 +17,31 @@ import (
 )
 
 var (
-	rootDir        string
-	scanDir        bool
-	scanFile       bool
-	scanMode       int
 	argCache       []string
 	dataForPrinter []string
 	quitProcess    chan bool
-
-	appMode        int
-	workDir        = ""
-	baseNameFiles  = "filesearch_files.txt"
-	baseNameDirs   = "filesearch_directory.txt"
-	resultFileName = "result.txt"
 )
 var (
 	progressBar   *widget.ProgressBarInfinite
 	entry_widget  *modifiedEntry
 	screen_widget *widget.Label
 )
+
+// ///////////////СТРУКТУРА НАСТРОЙКИ ПРИЛОЖЕНИЯ/////////////////////////////
+
+// AppSet - глобальная переменная с настройками приложения
+var AppSet *AppSettings
+
+// AppSettings - глобальная структура с настройками приложения
+type AppSettings struct {
+	AppMode        int
+	ScanMode       int
+	RootDir        string
+	WorkDir        string
+	BaseNameFiles  string
+	BaseNameDirs   string
+	ResultFileName string
+}
 
 // /////////////////////////////////////////////////////////////////////////
 type modifiedEntry struct {
@@ -60,12 +66,12 @@ func (e *modifiedEntry) onEsc() {
 	e.Entry.SetText("")
 }
 
-func (e *modifiedEntry) onEnter() {
+func (e *modifiedEntry) onEnter(aset *AppSettings) {
 	assert(e)
 	assert(e.input)
 	// findBtn(input_widget.Entry, screen_widget)
-	fmt.Printf("on onEnter AppSet is %v\n", AppSet.AppMode)
-	decider(e.input.Entry, screen_widget, AppSet)
+	fmt.Printf("on onEnter AppMode is %v\n", aset.AppMode)
+	decider(e.input.Entry, screen_widget, aset)
 
 }
 
@@ -106,7 +112,6 @@ func newSettings(m *widget.RadioGroup) *modifiedSelect {
 }
 
 func settingsChanged(c string) {
-	fmt.Println(c)
 	switch c {
 	case "каталоги":
 		AppSet.ScanMode = 0
@@ -114,15 +119,9 @@ func settingsChanged(c string) {
 		AppSet.ScanMode = 1
 		// case "И ТО, И ДРУГОЕ":
 	}
-}
+	fmt.Printf("on settingChanged ScanMode is %v\n", AppSet.ScanMode)
 
-// //////////////////////////////////////////////////////////
-type AppSettings struct {
-	AppMode  int
-	ScanMode int
 }
-
-var AppSet *AppSettings
 
 // ////////////////////////////////////////////////////////////////////////
 type Input_widget struct {
@@ -175,65 +174,28 @@ func keyWait() {
 }
 
 // блок инициализации: установка рабочего пути для файлов базы и поиска
-func initialize() error {
+func initialize(aset *AppSettings) error {
 	fmt.Println("### initialize")
-	AppSet = &AppSettings{
-		AppMode:  appMode,
-		ScanMode: scanMode,
-	}
+
+	aset.BaseNameFiles = "filesearch_files.txt"
+	aset.BaseNameDirs = "filesearch_directory.txt"
+	aset.ResultFileName = "result.txt"
+
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return fmt.Errorf("UserHomeDir error: %v", err)
 	}
 	filePath := filepath.Join(homeDir, ".config", "kiohime", "file.txt")
 	filePathDir := filepath.Dir(filePath)
-	workDir = filePathDir + "\\"
+	aset.WorkDir = filePathDir + "\\"
 	err = os.MkdirAll(filePathDir, 0777)
 	// 0666 for files
 	if err != nil {
 		return fmt.Errorf("Database error: %v", err)
 	}
+	fmt.Println("### END initialize")
 	return nil
 }
-
-// ////////////////////////////////////////////////
-// func main() {
-// 	// checking database folders
-// 	err := initialize()
-// 	if err != nil {
-// 		fmt.Printf("Error in initialisation : %q\n", err)
-// 		keyWait()
-// 		os.Exit(1)
-// 	}
-
-// 	// установка алиасов и значений флагов
-// 	flagSet := cli.New("!PROG! сканирует пути и найденное кладет в файл", writeBaser)
-// 	flagSet.Elements(
-// 		// cli.Flag("--path : показывает только пути", &path),
-// 		cli.Flag("-d -dir : сканирует только пути", &scanDir),
-// 		cli.Flag("-f -file : сканирует только файлы", &scanFile),
-// 		cli.Flag(": file pathes", &rootDir),
-// 		cli.Command("sd search : режим поиска по имеющейся базе", readBaser,
-// 			cli.Flag(": search arguments", &argCache),
-// 			cli.Flag("-d -dir : ищет в базе только пути", &scanDir),
-// 			cli.Flag("-f -file : ищет в базе только файлы", &scanFile)),
-// 		cli.Flag("-h -help -? /? : справка", flagSet.PrintHelp).Terminator(),
-// 	)
-
-// 	// парсинг введеных аргументов на предмет флагов
-// 	args := os.Args
-// 	err = flagSet.Parse(args)
-// 	// err = errors.New("TEST_ERROR")
-
-// 	// fmt.Println("#########" + workDir)
-
-// 	if err != nil {
-// 		fmt.Printf("error in parsing arguments : %q\n", err)
-// 		keyWait()
-// 		os.Exit(1)
-// 	}
-// 	keyWait()
-// }
 
 //executer - запускает программу в устновленном режиме
 func executer(aset *AppSettings) string {
@@ -241,7 +203,7 @@ func executer(aset *AppSettings) string {
 	fmt.Printf("on executer AppMode is %v\n", aset.AppMode)
 	switch aset.AppMode {
 	case 0:
-		base, e := readBaser()
+		base, e := readBaser(aset)
 		if e != nil {
 			a := fmt.Errorf("error in reading base : %v", e)
 			fmt.Println(a)
@@ -249,10 +211,6 @@ func executer(aset *AppSettings) string {
 		}
 		result = strings.Join(base, "\n")
 	case 1:
-
-		// Временно! пока галочек нет!!!!
-		// scanDir = true
-
 		e := writeBaser(aset)
 		if e != nil {
 			a := fmt.Errorf("error in writing base : %v", e)
@@ -271,7 +229,7 @@ func (e *modifiedEntry) TypedKey(key *fyne.KeyEvent) {
 	case fyne.KeyEscape:
 		e.onEsc()
 	case fyne.KeyEnter, fyne.KeyReturn:
-		e.onEnter()
+		e.onEnter(AppSet)
 	default:
 		e.Entry.TypedKey(key)
 	}
@@ -302,12 +260,11 @@ func decider(input *modifiedEntry, scr *widget.Label, aset *AppSettings) {
 	progressBar.Start()
 	progressBar.Show()
 	argCache = nil
-	rootDir = ""
 	switch aset.AppMode {
 	case 0:
 		argCache = append(argCache, input.Text)
 	case 1:
-		rootDir = input.Text
+		aset.RootDir = input.Text
 	}
 	result := executer(aset)
 	// dataBox.Add(widget.NewLabel(result))
@@ -319,14 +276,14 @@ func decider(input *modifiedEntry, scr *widget.Label, aset *AppSettings) {
 
 }
 
-func newForm(i *modifiedEntry, s *widget.Label) *widget.Form {
+func newForm(i *modifiedEntry, s *widget.Label, aset *AppSettings) *widget.Form {
 	assert(i, s)
 	form := &widget.Form{
 		Items: []*widget.FormItem{
 			{Text: "Data", Widget: i, HintText: "input data"},
 		},
 		OnCancel: nil,
-		OnSubmit: i.onEnter,
+		OnSubmit: func() { i.onEnter(aset) },
 
 		// OnSubmit: findBtn(i, s),
 	}
@@ -394,7 +351,7 @@ func makeContainerTree(i *Input_widget) *fyne.Container {
 	return all_container
 }
 
-func gui() {
+func gui(aset *AppSettings) {
 	the_app := app.New()
 	app_window := the_app.NewWindow("Notepad")
 	app_window.Resize(fyne.NewSize(1000, 500))
@@ -403,9 +360,9 @@ func gui() {
 	progressBar.Hide()
 
 	screen_widget = widget.NewLabel("")
-	mode_widget := newModeWidget(AppSet)
+	mode_widget := newModeWidget(aset)
 	entry_widget := newEntry()
-	form_widget := newForm(entry_widget, screen_widget)
+	form_widget := newForm(entry_widget, screen_widget, aset)
 	settings_widget := newSettings(mode_widget)
 	settings_widget.Selected = "каталоги"
 	settings_widget.OnChanged("каталоги")
@@ -421,13 +378,13 @@ func gui() {
 }
 
 func main() {
-
-	err := initialize()
+	AppSet = &AppSettings{}
+	err := initialize(AppSet)
 	if err != nil {
 		fmt.Printf("Error in initialisation : %q\n", err)
 		keyWait()
 		os.Exit(1)
 	}
-	gui()
+	gui(AppSet)
 
 }

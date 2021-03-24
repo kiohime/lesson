@@ -8,8 +8,6 @@ import (
 
 type Options struct {
 	WalkScanMode int
-	// SkipDir      bool
-	// SkipFile     bool
 }
 
 // StartWalk - Сканирование данных в пути и добавление их в кэш отрисовки
@@ -26,7 +24,7 @@ func StartWalk(paths []string, options Options) ([]string, []error) {
 	return ret, errors
 }
 
-func startWalk(rootDir string, options Options) ([]string, []error) {
+func startWalk(dir string, options Options) ([]string, []error) {
 	fmt.Printf("### start walking\n")
 	var ret []string
 	var errors []error
@@ -50,12 +48,7 @@ func startWalk(rootDir string, options Options) ([]string, []error) {
 
 		// только каталоги
 		case 0:
-			// fmt.Println("scanDir is", scanDir)
-			// fmt.Println("isDir is", isDir)
-
 			if isDir {
-				// fmt.Printf("visited : %q\n", path)
-				// fmt.Println("11111111111111", argCache)
 				ret = append(ret, path)
 			}
 
@@ -74,7 +67,7 @@ func startWalk(rootDir string, options Options) ([]string, []error) {
 	}
 	// сканирование данных в переменной пути
 
-	err := filepath.Walk(rootDir, walkFunc)
+	err := filepath.Walk(dir, walkFunc)
 	if err != nil {
 		errors = append(errors, err)
 	}
