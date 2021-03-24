@@ -14,25 +14,15 @@ func readBaser(aset *AppSettings) ([]string, error) {
 	dataForPrinter = nil
 	fmt.Println("### readbaser")
 
+	// проверка на кол-во аргументов на 24 марта 2021 аргумент всегда один,
+	// так что эта часть кода вообщето не нужна?
 	argLen := len(argCache)
+	fmt.Println("11111  ", argLen)
+	fmt.Println()
 	if argLen == 0 {
 		err := errors.New("no search arguments was inputed")
 		return nil, err
 	}
-	// fmt.Println(argCache)
-	// readBaseName := basePath +
-
-	// exportFileName := ""
-	// switch scanMode {
-	// case 1:
-	// 	exportFileName = baseNameDirs
-	// case 2:
-	// 	exportFileName = baseNameFiles
-	// default:
-	// 	exportFileName = baseNameDefault
-	// }
-
-	// exportFullPath := workDir + exportFileName
 
 	base := aset.WorkDir + aset.BaseNameDirs
 	// fmt.Println(base)
