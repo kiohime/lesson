@@ -9,13 +9,13 @@ import (
 	"strings"
 )
 
-//readBaser - reading mode : сканирует существующую базу
-func readBaser(aset *Settings, adata *Data) ([]string, error) {
+//readBaser - reading mode : сканирует существующую базу, возвращает данные, соответствующие запросу и ошибку
+func readBaser(aset *Settings, idata []string) ([]string, error) {
 	result := []string{}
 	fmt.Println("### readbaser")
 
 	// проверка на кол-во аргументов на 24 марта 2021 аргумент всегда один,
-	argLen := len(adata.Cache)
+	argLen := len(idata)
 	// fmt.Println("11111  ", argLen)
 	fmt.Println()
 	if argLen == 0 {
@@ -25,7 +25,7 @@ func readBaser(aset *Settings, adata *Data) ([]string, error) {
 	// так что эта часть кода вообщето не нужна?
 
 	base := aset.WorkDir + aset.TargetFileName
-	// fmt.Println(base)
+	// fmt.Println("base", base)
 	f, err := os.Open(base)
 	if err != nil {
 		return nil, err
@@ -41,22 +41,13 @@ func readBaser(aset *Settings, adata *Data) ([]string, error) {
 		line = strings.TrimSpace(line)
 		lineFile := filepath.Base(line)
 
-		for _, a := range adata.Cache {
+		for _, a := range idata {
 			// fmt.Println("argument is ", a)
 			if strings.Contains(lineFile, a) {
 				result = append(result, line)
 			}
 		}
 	}
-
-	// read := aset.WorkDir + aset.ResultFileName
-
-	// err = bahniFile(read, &adata.PrintData)
-
-	// if err != nil {
-	// 	fmt.Printf("error in making file : %q\n", err)
-	// 	return nil, err
-	// }
 
 	return result, err
 }

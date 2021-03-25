@@ -10,6 +10,8 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
+var app_window fyne.Window
+
 // /////////////////////////////////////////////////////////////////////////
 type modifiedEntry struct {
 	widget.Entry
@@ -39,7 +41,6 @@ func (e *modifiedEntry) onEnter(aset *Settings, adata *Data) {
 	// findBtn(input_widget.Entry, screen_widget)
 	fmt.Printf("on onEnter AppMode is %v\n", aset.AppMode)
 	mainDecider(e.input.Entry, screen_widget, aset, adata)
-
 }
 
 func (e *modifiedEntry) setInput(input *Input_widget) {
@@ -174,7 +175,7 @@ func makeContainerTree(i *Input_widget) *fyne.Container {
 
 func gui(aset *Settings, adata *Data) {
 	the_app := app.New()
-	app_window := the_app.NewWindow("Notepad")
+	app_window = the_app.NewWindow("Notepad")
 	app_window.Resize(fyne.NewSize(1000, 500))
 
 	progressBar = widget.NewProgressBarInfinite()

@@ -22,7 +22,7 @@ var (
 var AppData *Data
 
 type Data struct {
-	Cache     []string
+	InputData []string
 	PrintData []string
 }
 
@@ -39,7 +39,6 @@ type Settings struct {
 	WorkDir        string
 	BaseNameFiles  string
 	BaseNameDirs   string
-	ResultFileName string
 	TargetFileName string
 }
 
@@ -49,7 +48,6 @@ func initialize(aset *Settings) error {
 
 	aset.BaseNameFiles = "filesearch_files.txt"
 	aset.BaseNameDirs = "filesearch_directory.txt"
-	aset.ResultFileName = "result.txt"
 
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -68,19 +66,19 @@ func initialize(aset *Settings) error {
 }
 
 //bahniFile - создает файл с именем inputName из массива данных inputData, данные добавляются через ньюлайн
-func bahniFile(inputName string, inputData *[]string) error {
+func bahniFile(fName string, fData *[]string) error {
 	fmt.Println("#### bahnifile")
-	fmt.Println(inputName)
+	fmt.Println(fName)
 	// fmt.Println(inputData)
 
 	// err := os.Remove(inputName)
 	// создание файла по полному пути, вставка значений из кэша отрисовки с обрезкой лишняка
-	file, err := os.OpenFile(inputName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
+	file, err := os.OpenFile(fName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
 	if err != nil {
 		fmt.Println("#### END bahnifile")
 		return fmt.Errorf("bahni file 1 : %v", err)
 	}
-	s := strings.Join(*inputData, "\n")
+	s := strings.Join(*fData, "\n")
 	_, e := file.WriteString(s)
 
 	if e != nil {
@@ -98,23 +96,30 @@ func bahniFile(inputName string, inputData *[]string) error {
 	return nil
 }
 
+func printFile(pathname string) *[]string {
+	p := []string{"1", "2"}
+	return &p
+}
+
 // mainDecider - executes searching mode, depending on switch
 func mainDecider(input *modifiedEntry, scr *widget.Label, aset *Settings, adata *Data) {
 	assert(input, scr)
-
 	fmt.Printf("on decider AppMode is %v\n", aset.AppMode)
 
 	progressBar.Start()
 	progressBar.Show()
-	adata.Cache = nil
+	adata.InputData = nil
 	result := ""
 
-	switch aset.AppMode {
-	case 0:
-		adata.Cache = append(adata.Cache, input.Text)
-	case 1:
-		aset.RootDir = input.Text
-	}
+	// switch aset.AppMode {
+	// case 0:
+	// 	adata.InputData = append(adata.InputData, input.Text)
+	// case 1:
+	// 	aset.RootDir = input.Text
+	// }
+
+	adata.InputData = append(adata.InputData, input.Text)
+
 	result = executer(aset, adata)
 	// assert(result)
 	// dataBox.Add(widget.NewLabel(result))
@@ -128,13 +133,17 @@ func mainDecider(input *modifiedEntry, scr *widget.Label, aset *Settings, adata 
 //executer - запускает программу в устновленном режиме
 func executer(aset *Settings, adata *Data) string {
 	result := ""
+	allErrs := []error{}
 	fmt.Printf("on executer AppMode is %v\n", aset.AppMode)
 	switch aset.AppMode {
+	// режим поиска по базе...
 	case 0:
-		base := []string{}
-		allBase := []string{}
-		var e error
+		readBase := []string{}
+		// allReadBase := []string{}
+		readErrors := []error{}
+		var rError error
 		switch {
+		// ...нужны и каталоги, и файлы
 		case aset.ScanMode == 2:
 			for i := 0; i < 2; i++ {
 				aset.ScanMode = i
@@ -144,30 +153,45 @@ func executer(aset *Settings, adata *Data) string {
 				case 1:
 					aset.TargetFileName = aset.BaseNameFiles
 				}
-				base, e = readBaser(aset, adata)
-				fmt.Printf("%v\t%v\n", i, base)
-				if e != nil {
-					a := fmt.Errorf("error in reading base : %v", e)
-					fmt.Println(a)
-					// os.Exit(1)
+				// запуск поиска, получаем массив данных и ошибку
+				// если есть ошибки при поиске, передаем их в массив ошибок поиска по базе
+				rb := []string{}
+				rb, rError = readBaser(aset, adata.InputData)
+				readBase = append(readBase, rb...)
+
+				fmt.Printf("%v\t%v\n", i, rb)
+				if rError != nil {
+					readErrors = append(readErrors, rError)
+					aset.ScanMode = 2
+					return ""
 				}
-				allBase = append(allBase, base...)
 			}
+			fmt.Println("**************", readBase)
 			aset.ScanMode = 2
 
+		// ...нужны или каталоги, или файлы отдельно
 		case aset.ScanMode == 0 || aset.ScanMode == 1:
-			base, e = readBaser(aset, adata)
-			if e != nil {
-				a := fmt.Errorf("error in reading base : %v", e)
-				fmt.Println(a)
-				// os.Exit(1)
+			// запуск поиска, получаем массив данных
+			// если есть ошибки при поиске, передаем их в массив ошибок поиска по базе
+			readBase, rError = readBaser(aset, adata.InputData)
+			if rError != nil {
+				readErrors = append(readErrors, rError)
+				return ""
 			}
 		}
-		result = strings.Join(allBase, "\n")
+
+		// составляем строку из массива данных для вывода в экран гуи
+		result = strings.Join(readBase, "\n")
+
+	// /////////////////////////////////////
+	// режим сканирования пути...
 	case 1:
+		writeBase := []string{}
+		writeErrors := []error{}
+		var wError error
 		switch {
+		// ...нужны и каталоги, и файлы
 		case aset.ScanMode == 2:
-
 			for i := 0; i < 2; i++ {
 				aset.ScanMode = i
 				switch aset.ScanMode {
@@ -176,23 +200,56 @@ func executer(aset *Settings, adata *Data) string {
 				case 1:
 					aset.TargetFileName = aset.BaseNameFiles
 				}
-				e := writeBaser(aset, adata)
-				if e != nil {
-					a := fmt.Errorf("error in writing base : %v", e)
-					fmt.Println(a)
+				// запуск сканирования, получаем массив данных и ошибку
+				// если есть ошибки при сканировании, передаем их в массив ошибок сканирования пути
+				writeBase, wError = writeBaser(aset, adata.InputData)
+				if wError != nil {
+					writeErrors = append(writeErrors, wError)
+					aset.ScanMode = 2
+					return ""
+				}
+				// создаем файл результат
+				// если возникла ошибка при создании файла результата сканирования, добавляем ошибку в массив ошибок сканирования пути
+				write := aset.WorkDir + aset.TargetFileName
+				writeFileError := bahniFile(write, &writeBase)
+				if writeFileError != nil {
+					wfe := fmt.Errorf("error in creating file : %v", writeFileError)
+					writeErrors = append(writeErrors, wfe)
 				}
 			}
 			aset.ScanMode = 2
 
+		// ...нужны или каталоги, или файлы отдельно
 		case aset.ScanMode == 0 || aset.ScanMode == 1:
-			e := writeBaser(aset, adata)
-			if e != nil {
-				a := fmt.Errorf("error in writing base : %v", e)
-				fmt.Println(a)
+			// запуск сканирования, получаем массив данных и ошибку
+			// если есть ошибки при сканировании, передаем их в массив ошибок сканирования пути
+			writeBase, wError = writeBaser(aset, adata.InputData)
+			if wError != nil {
+				writeErrors = append(writeErrors, wError)
+				return ""
+			}
+			// создаем файл результат
+			// если возникла ошибка при создании файла результата сканирования, добавляем ошибку в массив ошибок сканирования пути
+			write := aset.WorkDir + aset.TargetFileName
+			writeFileError := bahniFile(write, &writeBase)
+			if writeFileError != nil {
+				wfe := fmt.Errorf("error in creating file : %v", writeFileError)
+				writeErrors = append(writeErrors, wfe)
 			}
 		}
-		fmt.Println("THE END")
+		// добавляем массив ошибок сканирования пути в единый массив экзекутора
+		allErrs = append(allErrs, writeErrors...)
+
 	}
+	if len(allErrs) > 0 {
+		var err string
+		// fmt.Printf("error in walking : %q\n", err)
+		for i, e := range allErrs {
+			err += fmt.Sprintf("	%v : %v\n", i, e)
+		}
+		fmt.Printf(err)
+	}
+	fmt.Println("THE END")
 	return result
 }
 
