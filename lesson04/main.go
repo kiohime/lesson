@@ -191,49 +191,10 @@ func main() {
 	// entry_widget := widget.NewEntry()
 	// entryText := entry_widget.Text
 
-	// screen_text := canvas.NewText("", setColor("red"))
-	// screenText := screen_widget.Text
-
-	// inputSlice := []string{"foo", "bar11111", "foobar"}
-	// // input := "fooBarbaz1"
-	// pattern := "a1"
-
-	// strPos := findPos(input, pattern)
-	// screen_widget.Text = printString(input, strPos)
-
-	// screenSli := []word{}
-	// t := word{}
-	// for _, str := range inputSlice {
-	// 	a := findPos(str, pattern)
-	// 	t.Letter = str
-	// 	screenSli = append(screenSli, printString(t, a))
-	// 	// fmt.Println("debug ", screenSli)
-	// }
-	// list := makeTextList(screenSli)
-
 	tester := []string{"fyoobar111", "fayzaza2r", "fofbyar"}
-	pattern := "fo"
+	pattern := ""
 
 	result := renderMax(tester, pattern)
-
-	// data := []int{5, 3, 1}
-	// data = []int{5, 3, 0}
-	// b := NewFyneString("HHHteststring", &data)
-	// data = []int{}
-	// c := NewFyneString("HHHteststring", &data)
-	// data = []int{7, 4, 3, 2, 0}
-	// d := NewFyneString("HHHteststring", &data)
-
-	// cont.Objects = append(cont.Objects, fString.render(cont.Position()))
-	// cont.Move(fyne.NewPos(0, 15))
-
-	// cont.Objects = append(cont.Objects, b.render(cont.Position()))
-	// cont.Move(fyne.NewPos(0, 30))
-
-	// cont.Objects = append(cont.Objects, c.render(cont.Position()))
-	// cont.Move(fyne.NewPos(0, 45))
-
-	// cont.Objects = append(cont.Objects, d.render(cont.Position()))
 
 	app_window.SetContent(result)
 	app_window.ShowAndRun()
