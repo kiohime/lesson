@@ -8,23 +8,11 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/widget"
 	"github.com/junegunn/fzf/src/algo"
 	"github.com/junegunn/fzf/src/util"
 )
-
-// type Track struct {
-// 	Name      string
-// 	AlbumName string
-// 	Artist    string
-// }
-
-// var tracks = []Track{
-// 	{"foo", "album1", "artist1"},
-// 	{"bar", "album1", "artist1"},
-// 	{"foo", "album2", "artist1"},
-// 	{"baz", "album2", "artist2"},
-// 	{"baz", "album3", "artist2"},
-// }
 
 func findPos(input string, pattern string) *[]int {
 
@@ -37,7 +25,7 @@ func findPos(input string, pattern string) *[]int {
 	return pos
 }
 
-func setColor(s string) color.RGBA {
+func SetColor(s string) color.RGBA {
 	var c color.RGBA
 	switch s {
 	case "red":
@@ -104,9 +92,9 @@ func sliceStr(s string, pos *[]int) []string {
 
 func getHighlightColor(hl bool) color.RGBA {
 	if hl {
-		return setColor("red")
+		return SetColor("red")
 	}
-	return setColor("black")
+	return SetColor("black")
 }
 
 func NewFyneString(s string, pos *[]int) *FyneString {
@@ -143,7 +131,7 @@ type FyneString struct {
 	// pos      *[]int
 }
 
-func (o *FyneString) render(rPos fyne.Position) fyne.CanvasObject {
+func (o *FyneString) renderString(rPos fyne.Position) *fyne.Container {
 	const kerning = -1
 
 	res := fyne.NewContainer()
@@ -158,9 +146,10 @@ func (o *FyneString) render(rPos fyne.Position) fyne.CanvasObject {
 		nextOff = off
 	}
 	return res
+
 }
 
-func renderMax(inData []string, pat string) fyne.CanvasObject {
+func Render(inData []string, pat string) *fyne.Container {
 	const leading = -3
 
 	result := fyne.NewContainer()
@@ -175,12 +164,27 @@ func renderMax(inData []string, pat string) fyne.CanvasObject {
 		strData := NewFyneString(in, strPos)
 		sample := strData.segments[0]
 		off := fyne.MeasureText(in, sample.TextSize, sample.TextStyle)
-		result.Objects = append(result.Objects, strData.render(result.Position()))
+		result.Objects = append(result.Objects, strData.renderString(result.Position()))
 		resY = off.Height + resY + leading
 
 		result.Move(fyne.NewPos(resX, resY))
 	}
 	return result
+}
+
+type fz_label struct {
+	widget.Label
+	Input *fyne.Container
+}
+
+func (i *fz_label) make() {
+
+}
+
+func fzscreenPrint() *fz_label {
+	label := &fz_label{}
+	label.ExtendBaseWidget(label)
+	return label
 }
 
 func main() {
@@ -192,10 +196,15 @@ func main() {
 	// entryText := entry_widget.Text
 
 	tester := []string{"fyoobar111", "fayzaza2r", "fofbyar"}
-	pattern := ""
+	pattern := "y"
 
-	result := renderMax(tester, pattern)
+	result := fyne.NewContainer()
 
-	app_window.SetContent(result)
+	result = Render(tester, pattern)
+	a := canvas.NewText("main", SetColor("green"))
+	c := widget.NewLabel("")
+	b := container.NewVBox(a, c, result)
+
+	app_window.SetContent(b)
 	app_window.ShowAndRun()
 }
