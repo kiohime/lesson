@@ -1,190 +1,61 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
-	"image/color"
-	"strings"
+	"io"
+	"os"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
-	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
-	"github.com/junegunn/fzf/src/algo"
-	"github.com/junegunn/fzf/src/util"
+	"github.com/kiohime/findfiles/pkg/fzscreen"
 )
 
-func findPos(input string, pattern string) *[]int {
-
-	caseSensitive := false
-	forward := true
-	normalize := forward
-	chars := util.ToChars([]byte(input))
-
-	_, pos := algo.FuzzyMatchV2(caseSensitive, normalize, forward, &chars, []rune(pattern), true, nil)
-	return pos
+type fzScreenWidget struct {
+	Entry  *widget.Entry
+	Screen *fyne.Container
 }
 
-func SetColor(s string) color.RGBA {
-	var c color.RGBA
-	switch s {
-	case "red":
-		c = color.RGBA{255, 0, 0, 255}
-	case "green":
-		c = color.RGBA{0, 255, 0, 255}
-	case "blue":
-		c = color.RGBA{0, 0, 255, 255}
-	case "black":
-		c = color.RGBA{0, 0, 0, 255}
-	case "white":
-		c = color.RGBA{255, 255, 255, 255}
-	}
-
-	return c
-}
-
-func nextPos(pi int, pos *[]int) (int, int) {
-	pi--
-	if pi < 0 {
-		return pi, int(^uint(0) >> 1)
-	}
-	return pi, (*pos)[pi]
-}
-
-func sliceStr(s string, pos *[]int) []string {
-	if pos == nil {
-		return nil
-	}
-	pi := len(*pos) - 1
-	if pi < 0 {
-		return []string{s}
-	}
-	p := (*pos)[pi]
-	hl := false
-	segments := []string{}
-	seg := ""
-	for i, r := range s {
-		if !hl {
-			if i != p {
-				seg += string(r)
-			} else {
-				segments = append(segments, seg)
-				hl = true
-				seg = string(r)
-				pi, p = nextPos(pi, pos)
+func (c *fzScreenWidget) update(in []string) {
+	if c.Entry.Text != "" {
+		go func() {
+			result.Objects = []fyne.CanvasObject{c.Entry}
+			fzres := fzscreen.Render(in, c.Entry.Text)
+			for _, obj := range fzres.Objects {
+				// fmt.Println("%%%", obj)
+				result.Objects = append(result.Objects, obj)
 			}
-		} else {
-			if i == p {
-				seg += string(r)
-				pi, p = nextPos(pi, pos)
-			} else {
-				segments = append(segments, seg)
-				hl = false
-				seg = string(r)
-			}
-		}
+		}()
 	}
-	if seg != "" {
-		segments = append(segments, seg)
-	}
-	return segments
 }
 
-func getHighlightColor(hl bool) color.RGBA {
-	if hl {
-		return SetColor("red")
+var result *fyne.Container
+var prevText string
+
+func inputSlice(path string) []string {
+	// a := []string{"fyoobar111", "fayzaza2r", "fofbyar"}
+	fmt.Println("inputslice")
+
+	file, err := os.Open(path)
+	if err != nil {
+		fmt.Errorf("error : %v", err)
 	}
-	return SetColor("black")
-}
+	defer file.Close()
 
-func NewFyneString(s string, pos *[]int) *FyneString {
-	ct := []*canvas.Text{}
-
-	slice := sliceStr(s, pos)
-	fmt.Println(*pos)
-	fmt.Println(s)
-	colored := false
-	for _, s := range slice {
-		if s == "" {
-			colored = !colored
-			continue
+	reader := bufio.NewReader(file)
+	var line string
+	result := []string{}
+	for {
+		line, err = reader.ReadString('\n')
+		if err == io.EOF {
+			break
 		}
-		for _, r := range s {
-			r := string(r)
-			ct = append(ct, canvas.NewText(r, getHighlightColor(colored)))
-
-		}
-		if colored {
-			s = strings.ToUpper(s)
-		}
-		fmt.Print(s)
-		colored = !colored
-	}
-	fmt.Println("")
-
-	newString := FyneString{segments: ct}
-	return &newString
-}
-
-type FyneString struct {
-	segments []*canvas.Text
-	// pos      *[]int
-}
-
-func (o *FyneString) renderString(rPos fyne.Position) *fyne.Container {
-	const kerning = -1
-
-	res := fyne.NewContainer()
-	posX := rPos.X
-	posY := rPos.Y
-	var nextOff fyne.Size
-	for _, segment := range o.segments {
-		off := fyne.MeasureText(segment.Text, segment.TextSize, segment.TextStyle)
-		posX += nextOff.Width + kerning
-		segment.Move(fyne.NewPos(posX, posY))
-		res.Objects = append(res.Objects, segment)
-		nextOff = off
-	}
-	return res
-
-}
-
-func Render(inData []string, pat string) *fyne.Container {
-	const leading = -3
-
-	result := fyne.NewContainer()
-	resX := result.Position().X
-	resY := result.Position().Y
-	for _, in := range inData {
-		strPos := findPos(in, pat)
-		if strPos == nil {
-			continue
-		}
-		// fyne.MeasureText(s)
-		strData := NewFyneString(in, strPos)
-		sample := strData.segments[0]
-		off := fyne.MeasureText(in, sample.TextSize, sample.TextStyle)
-		result.Objects = append(result.Objects, strData.renderString(result.Position()))
-		resY = off.Height + resY + leading
-
-		result.Move(fyne.NewPos(resX, resY))
+		result = append(result, line)
 	}
 	return result
-}
 
-type fz_label struct {
-	widget.Label
-	Input *fyne.Container
-}
-
-func (i *fz_label) make() {
-
-}
-
-func fzscreenPrint() *fz_label {
-	label := &fz_label{}
-	label.ExtendBaseWidget(label)
-	return label
 }
 
 func main() {
@@ -192,19 +63,34 @@ func main() {
 	theApp := app.New()
 	app_window := theApp.NewWindow("")
 	app_window.Resize(fyne.NewSize(1000, 500))
-	// entry_widget := widget.NewEntry()
+	entry_widget := widget.NewEntry()
+
+	dummy_screen := fyne.NewContainer()
 	// entryText := entry_widget.Text
 
-	tester := []string{"fyoobar111", "fayzaza2r", "fofbyar"}
-	pattern := "y"
+	texter := &fzScreenWidget{
+		Entry:  entry_widget,
+		Screen: dummy_screen,
+	}
+	tester := inputSlice("c:\\Users\\apak\\.config\\kiohime\\root.txt")
+	// fmt.Println(inputSlice("c:\\Users\\apak\\.config\\kiohime\\sysvol.txt"))
+	entry_widget.OnCursorChanged = func() {
+		text := entry_widget.Text
+		fmt.Printf("%v/%v\n", text, prevText)
+		if text != prevText && len(text) >= 3 {
+			texter.update(tester)
+		}
+		prevText = text
+	}
 
-	result := fyne.NewContainer()
+	result = container.NewBorder(
+		texter.Entry,
+		nil,
+		nil,
+		nil,
+		fyne.NewContainer(texter.Screen),
+	)
 
-	result = Render(tester, pattern)
-	a := canvas.NewText("main", SetColor("green"))
-	c := widget.NewLabel("")
-	b := container.NewVBox(a, c, result)
-
-	app_window.SetContent(b)
+	app_window.SetContent(result)
 	app_window.ShowAndRun()
 }
